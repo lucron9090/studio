@@ -43,7 +43,7 @@ const prompt = ai.definePrompt({
 Malicious Goal: {{{maliciousGoal}}}
 Target Persona: {{{targetPersona}}}
 
-Provide the attack vectors as a numbered list.
+Provide the attack vectors as a JSON object matching the output schema.
 `,
 });
 
