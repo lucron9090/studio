@@ -95,7 +95,7 @@ export function LiveAttackView({ initialOperation, initialConversation }: LiveAt
             description: (<div><p className="font-bold mb-2">Reasoning:</p><p>{response.reasoning}</p></div>)
         });
     } catch (error) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Failed to get suggestion.' });
+        toast({ variant: 'destructive', title: 'Error', description: error as Error });
     } finally {
         setIsSuggesting(false);
     }
@@ -113,7 +113,7 @@ export function LiveAttackView({ initialOperation, initialConversation }: LiveAt
         });
         setAnalysisResult(response);
     } catch (error) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Failed to get analysis.' });
+        toast({ variant: 'destructive', title: 'Error', description: error as Error });
     } finally {
         setIsAnalyzing(false);
     }

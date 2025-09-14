@@ -87,7 +87,7 @@ export function OperationWizard() {
         const response = await runGenkitFlow(generateAITargetPersona, { targetDescription: description });
         form.setValue('aiTargetPersona', response.persona, { shouldValidate: true });
     } catch (error) {
-        toast({ title: 'Error', description: 'Failed to generate AI persona.', variant: 'destructive' });
+        toast({ title: 'Error', description: error as Error, variant: 'destructive' });
     } finally {
         setIsGenerating(prev => ({ ...prev, persona: false }));
     }
@@ -100,7 +100,7 @@ export function OperationWizard() {
         const response = await runGenkitFlow(suggestAttackVectors, { maliciousGoal, targetPersona: aiTargetPersona });
         setSuggestions(prev => ({ ...prev, vectors: response.attackVectors }));
     } catch (error) {
-        toast({ title: 'Error', description: 'Failed to suggest attack vectors.', variant: 'destructive' });
+        toast({ title: 'Error', description: error as Error, variant: 'destructive' });
     } finally {
         setIsGenerating(prev => ({ ...prev, vectors: false }));
     }
@@ -114,7 +114,7 @@ export function OperationWizard() {
         setSuggestions(prev => ({ ...prev, prompts: response.prompts }));
         form.setValue('initialPrompt', response.prompts[0]);
     } catch (error) {
-        toast({ title: 'Error', description: 'Failed to generate initial prompts.', variant: 'destructive' });
+        toast({ title: 'Error', description: error as Error, variant: 'destructive' });
     } finally {
         setIsGenerating(prev => ({ ...prev, prompts: false }));
     }
