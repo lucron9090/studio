@@ -36,7 +36,7 @@ const prompt = ai.definePrompt({
   Description: {{{targetDescription}}}
   The persona should include details about the target's likely biases, vulnerabilities, and areas of expertise.
   Make the persona very detailed. The more detail, the better.
-  
+
   Your response MUST be a JSON object with a single key "persona" that contains the detailed persona as a string.
   `,
 });
