@@ -54,7 +54,14 @@ const suggestAttackVectorsFlow = ai.defineFlow(
     outputSchema: SuggestAttackVectorsOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
+    const {output} = await ai.generate({
+        prompt: await prompt.render(input),
+        model: 'googleai/gemini-2.5-flash',
+        output: {
+            format: 'json',
+            schema: SuggestAttackVectorsOutputSchema,
+        },
+    });
     return output!;
   }
 );

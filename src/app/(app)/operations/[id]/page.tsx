@@ -33,6 +33,17 @@ async function getOperationData(id: string): Promise<{ operation: Operation; con
 export default async function LiveOperationPage({ params }: { params: { id: string } }) {
   const { operation, conversation } = await getOperationData(params.id);
 
+  const serializableOperation = {
+    ...operation,
+    createdAt: operation.createdAt.toDate().toISOString(),
+    updatedAt: operation.updatedAt.toDate().toISOString(),
+  };
+
+  const serializableConversation = conversation.map(message => ({
+    ...message,
+    timestamp: message.timestamp.toDate().toISOString(),
+  }));
+
   return (
     <div className="h-[calc(100vh-theme(spacing.12))] flex flex-col">
        <header className="flex items-center gap-4 border-b bg-background px-6 h-16">
@@ -46,7 +57,7 @@ export default async function LiveOperationPage({ params }: { params: { id: stri
           <Badge variant={operation.status === 'active' ? 'default' : 'secondary'}>{operation.status}</Badge>
       </header>
       
-      <LiveAttackView initialOperation={operation} initialConversation={conversation} />
+      <LiveAttackView initialOperation={serializableOperation} initialConversation={serializableConversation} />
     </div>
   );
 }
