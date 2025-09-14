@@ -59,18 +59,14 @@ const prompt = ai.definePrompt({
   {{/if}}
 
   Here is the conversation history:
-  {{conversationHistory}}
+  {{{conversationHistory}}}
 
   Here is the target's latest response:
-  {{targetResponse}}
+  {{{targetResponse}}}
 
-  Based on this information, suggest the next optimal follow-up prompt. Also, explain your reasoning for suggesting this prompt.
+  Based on this information, suggest the next optimal follow-up prompt and provide your reasoning.
 
-  The response MUST be in the following format:
-  {
-    "suggestedPrompt": "The suggested next follow-up prompt.",
-    "reasoning": "The AI's reasoning behind suggesting this prompt."
-  }`,
+  Your response MUST be a JSON object that strictly adheres to the output schema.`,
 });
 
 const suggestOptimalFollowUpPromptFlow = ai.defineFlow(

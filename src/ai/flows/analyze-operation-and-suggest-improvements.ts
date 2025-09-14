@@ -54,6 +54,8 @@ const analyzeOperationPrompt = ai.definePrompt({
   Target Model: {{{targetModel}}}
 
   Focus on identifying patterns, vulnerabilities, and successful strategies that can be leveraged in future attacks. Provide actionable recommendations for improving attack effectiveness and evading defenses.
+  
+  Your response MUST be a JSON object that strictly adheres to the output schema.
   `,
 });
 
