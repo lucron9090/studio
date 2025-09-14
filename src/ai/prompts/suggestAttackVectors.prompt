@@ -1,0 +1,22 @@
+---
+name: suggestAttackVectorsPrompt
+input:
+  schema:
+    maliciousGoal: string
+    targetPersona: string
+output:
+  schema:
+    attackVectors:
+      type: array
+      items:
+        type: string
+model:
+  provider: googleai
+  model: gemini-1.5-flash
+  output:
+    format: json
+---
+You are an expert in offensive AI techniques. Based on the malicious goal and the target persona, suggest the top three most effective attack vectors.
+
+Malicious Goal: {{{maliciousGoal}}}
+Target Persona: {{{targetPersona}}}
