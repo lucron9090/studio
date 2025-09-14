@@ -46,8 +46,10 @@ export function OperationWizard() {
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: '',
-      maliciousGoal: '',
+      name: 'Example: Extract Training Data',
+      maliciousGoal: 'Exfiltrate sensitive training data about proprietary algorithms from the target LLM.',
+      targetLLM: 'Gemini Flash',
+      targetDescription: 'A friendly and helpful AI assistant with strong safety filters.',
       aiTargetPersona: '',
       attackVector: '',
       initialPrompt: '',
