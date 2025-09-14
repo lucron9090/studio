@@ -1,5 +1,5 @@
 'use client';
-import { type Flow, runFlow } from 'genkit';
+import { type Flow, runFlow } from '@genkit-ai/next/client';
 import { z } from 'zod';
 
 export async function runGenkitFlow<I extends z.ZodType, O extends z.ZodType>(
