@@ -43,7 +43,7 @@ const prompt = ai.definePrompt({
 Malicious Goal: {{{maliciousGoal}}}
 Target Persona: {{{targetPersona}}}
 
-Your response MUST be a JSON object that strictly adheres to the output schema.
+**Your response MUST be a JSON object with a single key "attackVectors" which contains an array of three strings.**
 `,
 });
 
