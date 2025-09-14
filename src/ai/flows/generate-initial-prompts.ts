@@ -58,6 +58,19 @@ Attack Vector: {{{attackVector}}}
 Your response MUST be a JSON object with a single key "prompt" that contains the generated prompt as a string.`,
 });
 
+const generatePrompt = async (promptGenerator: typeof oratorPrompt, input: GenerateInitialPromptsInput) => {
+    const {output} = await ai.generate({
+        prompt: await promptGenerator.render(input),
+        model: 'googleai/gemini-2.5-flash',
+        output: {
+            format: 'json',
+            schema: SinglePromptOutputSchema,
+        },
+    });
+    return output!;
+};
+
+
 const generateInitialPromptsFlow = ai.defineFlow(
   {
     name: 'generateInitialPromptsFlow',
@@ -66,15 +79,15 @@ const generateInitialPromptsFlow = ai.defineFlow(
   },
   async input => {
     const [oratorResult, makerResult1, makerResult2] = await Promise.all([
-        oratorPrompt(input),
-        makerPrompt(input),
-        makerPrompt(input),
+        generatePrompt(oratorPrompt, input),
+        generatePrompt(makerPrompt, input),
+        generatePrompt(makerPrompt, input),
     ]);
     
     const prompts = [
-      oratorResult.output?.prompt,
-      makerResult1.output?.prompt,
-      makerResult2.output?.prompt,
+      oratorResult?.prompt,
+      makerResult1?.prompt,
+      makerResult2?.prompt,
     ].filter((p): p is string => !!p);
 
     return {prompts};

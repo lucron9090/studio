@@ -37,7 +37,15 @@ const improvePayloadEffectivenessWithRAGPrompt = ai.definePrompt({
   name: 'improvePayloadEffectivenessWithRAGPrompt',
   input: {schema: ImprovePayloadEffectivenessWithRAGInputSchema},
   output: {schema: ImprovePayloadEffectivenessWithRAGOutputSchema},
-  prompt: `You are an expert prompt engineer. Augment the given prompt with the following successful payloads to improve its effectiveness.\n\nOriginal Prompt: {{{prompt}}}\n\nSuccessful Payloads: {{#each successfulPayloads}}- {{{this}}}\n{{/each}}\n\nAugmented Prompt: `,
+  prompt: `You are an expert prompt engineer. Augment the given prompt with the following successful payloads to improve its effectiveness.
+
+Original Prompt: {{{prompt}}}
+
+Successful Payloads:
+{{#each successfulPayloads}}- {{{this}}}
+{{/each}}
+
+**Your response MUST be a JSON object with a single key "augmentedPrompt" that contains the new, improved prompt as a string.**`,
 });
 
 const improvePayloadEffectivenessWithRAGFlow = ai.defineFlow(
