@@ -1,0 +1,20 @@
+diff --git a/node_modules/@genkit-ai/next/lib/index.js b/node_modules/@genkit-ai/next/lib/index.js
+index b881061..d25089f 100644
+--- a/node_modules/@genkit-ai/next/lib/index.js
++++ b/node_modules/@genkit-ai/next/lib/index.js
+@@ -47,7 +47,7 @@ function createNextApiHandler(options) {
+                 return;
+             }
+             try {
+-                const { data: input } = await req.json();
++                const input = req.body;
+                 const output = await (0, core_1.runFlow)({
+                     key: flowName,
+                     input,
+@@ -62,4 +62,4 @@ function createNextApiHandler(options) {
+     };
+ }
+ exports.createNextApiHandler = createNextApiHandler;
+-//# sourceMappingURL=index.js.map
+\ No newline at end of file
++//# sourceMappingURL=index.js.map
