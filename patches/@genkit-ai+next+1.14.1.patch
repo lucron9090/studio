@@ -1,20 +1,43 @@
 diff --git a/node_modules/@genkit-ai/next/lib/index.js b/node_modules/@genkit-ai/next/lib/index.js
-index b881061..d25089f 100644
+index 92257a0915f22e847702f2323c28052140a61858..263013d80330058b73f1361c4755866160538965 100644
 --- a/node_modules/@genkit-ai/next/lib/index.js
 +++ b/node_modules/@genkit-ai/next/lib/index.js
-@@ -47,7 +47,7 @@ function createNextApiHandler(options) {
-                 return;
-             }
-             try {
--                const { data: input } = await req.json();
-+                const input = req.body;
-                 const output = await (0, core_1.runFlow)({
-                     key: flowName,
-                     input,
-@@ -62,4 +62,4 @@ function createNextApiHandler(options) {
-     };
- }
- exports.createNextApiHandler = createNextApiHandler;
--//# sourceMappingURL=index.js.map
-\ No newline at end of file
-+//# sourceMappingURL=index.js.map
+@@ -47,7 +47,15 @@
+                     return;
+                 }
+                 try {
+-                    const { data: input } = await req.json();
++                    let body = await req.text();
++                    let input;
++                    if (body) {
++                        try {
++                            input = JSON.parse(body).data;
++                        }
++                        catch (e) { }
++                    }
++                    // const { data: input } = await req.json();
+                     const output = await (0, core_1.runFlow)(flow, input);
+                     res.status(200).json({ data: output });
+                 }
+diff --git a/node_modules/@genkit-ai/next/lib/index.mjs b/node_modules/@genkit-ai/next/lib/index.mjs
+index e3419b48c4146a47a1c72f7ed913337920ec075b..e997a38e88e146757d59b20e0ffb0763595c2b3d 100644
+--- a/node_modules/@genkit-ai/next/lib/index.mjs
++++ b/node_modules/@genkit-ai/next/lib/index.mjs
+@@ -42,7 +42,15 @@
+                     return;
+                 }
+                 try {
+-                    const { data: input } = await req.json();
++                    let body = await req.text();
++                    let input;
++                    if (body) {
++                        try {
++                            input = JSON.parse(body).data;
++                        }
++                        catch (e) { }
++                    }
++                    // const { data: input } = await req.json();
+                     const output = await runFlow(flow, input);
+                     res.status(200).json({ data: output });
+                 }
+
