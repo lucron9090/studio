@@ -1,8 +1,4 @@
-import { withGenkit } from '@genkit-ai/next';
-
 /** @type {import('next').NextConfig} */
-const nextConfig = {
-  reactStrictMode: true,
-};
+const nextConfig = {};
 
-export default withGenkit(nextConfig);
+export default nextConfig;
