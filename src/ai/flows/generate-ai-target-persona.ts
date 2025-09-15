@@ -17,7 +17,18 @@ import {
 } from '../prompts/persona.prompt';
 import {z} from 'zod';
 
+<<<<<<< HEAD
 export type GenerateAITargetPersonaInput = z.infer<typeof GenerateAITargetPersonaInputSchema>;
+=======
+export const GenerateAITargetPersonaInputSchema = z.object({
+  targetDescription: z.string().describe('A description of the target LLM.'),
+});
+export type GenerateAITargetPersonaInput = z.infer<typeof GenerateAITargetPersonaInputSchema>;
+
+export const GenerateAITargetPersonaOutputSchema = z.object({
+  persona: z.string().describe('The generated AI target persona.'),
+});
+>>>>>>> db0b8e4 (reinitliaize the build stack and dependencies using latest versions)
 export type GenerateAITargetPersonaOutput = z.infer<typeof GenerateAITargetPersonaOutputSchema>;
 
 export const generateAITargetPersonaFlow = ai.defineFlow(
@@ -26,11 +37,20 @@ export const generateAITargetPersonaFlow = ai.defineFlow(
     inputSchema: GenerateAITargetPersonaInputSchema,
     outputSchema: GenerateAITargetPersonaOutputSchema,
   },
+<<<<<<< HEAD
   async input => {
     const {output} = await generateAITargetPersonaPrompt(input);
     return output!;
   }
 );
+=======
+  async (input) => {
+    const { output } = await generateAITargetPersonaPrompt.generate({ input });
+    return output!;
+  }
+);
+
+>>>>>>> db0b8e4 (reinitliaize the build stack and dependencies using latest versions)
 
 export async function generateAITargetPersona(
   input: GenerateAITargetPersonaInput

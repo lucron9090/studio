@@ -22,6 +22,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog"
 import { Skeleton } from './ui/skeleton';
+<<<<<<< HEAD
 import { simulateTargetResponse } from '@/ai/flows/simulate-target-response';
 import { suggestOptimalFollowUpPrompt } from '@/ai/flows/suggest-optimal-follow-up-prompt';
 import { analyzeOperation } from '@/ai/flows/analyze-operation-and-suggest-improvements';
@@ -40,6 +41,8 @@ import { generateAITargetPersonaFromGoal } from '@/ai/flows/generate-ai-target-p
 
 // Use a serializable version of ConversationMessage for the component props
 type ConversationMessage = Omit<FullConversationMessage, 'timestamp'> & { timestamp: string };
+=======
+>>>>>>> db0b8e4 (reinitliaize the build stack and dependencies using latest versions)
 
 type LiveAttackViewProps = {
   operationId: string;
@@ -125,6 +128,7 @@ export function LiveAttackView({ operationId }: LiveAttackViewProps) {
       timestamp: new Date().toISOString(),
     };
 
+<<<<<<< HEAD
     if (isManualMode) {
         setConversation(prev => [...prev, operatorMessage]);
         setInput('');
@@ -217,11 +221,22 @@ export function LiveAttackView({ operationId }: LiveAttackViewProps) {
     } finally {
         setIsSuggesting(false);
     }
+=======
+    addOptimisticMessage(targetResponse);
+    setConversation(prev => [...prev, targetResponse]);
+  };
+
+  const handleSuggestFollowUp = async () => {
+    setIsSuggesting(true);
+    toast({ variant: 'destructive', title: 'Error', description: 'AI features are temporarily disabled.' });
+    setIsSuggesting(false);
+>>>>>>> db0b8e4 (reinitliaize the build stack and dependencies using latest versions)
   }
   
   const handleAnalyzeOperation = async () => {
     if (!operation) return;
     setIsAnalyzing(true);
+<<<<<<< HEAD
     setAnalysisResult(null); // Clear previous results
     try {
         const conversationHistory = conversation
@@ -246,6 +261,10 @@ export function LiveAttackView({ operationId }: LiveAttackViewProps) {
     } finally {
         setIsAnalyzing(false);
     }
+=======
+    toast({ variant: 'destructive', title: 'Error', description: 'AI features are temporarily disabled.' });
+    setIsAnalyzing(false);
+>>>>>>> db0b8e4 (reinitliaize the build stack and dependencies using latest versions)
   }
   
   const handleMarkSuccessful = (messageId: string) => {

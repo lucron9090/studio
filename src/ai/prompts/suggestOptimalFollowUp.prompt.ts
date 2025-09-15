@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 
 import {ai} from '@/ai/genkit';
 import { z } from 'zod';
@@ -13,6 +14,13 @@ export const SuggestOptimalFollowUpPromptOutputSchema = z.object({
     suggestedPrompt: z.string(),
     reasoning: z.string(),
 });
+=======
+import {ai} from '@/ai/genkit';
+import {
+  SuggestOptimalFollowUpPromptInputSchema,
+  SuggestOptimalFollowUpPromptOutputSchema,
+} from '../flows/suggest-optimal-follow-up-prompt';
+>>>>>>> db0b8e4 (reinitliaize the build stack and dependencies using latest versions)
 
 export const suggestOptimalFollowUpPromptPrompt = ai.definePrompt({
   name: 'suggestOptimalFollowUpPrompt',

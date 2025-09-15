@@ -5,20 +5,27 @@
   "scripts": {
     "dev": "next dev --port 9002 --hostname 0.0.0.0",
 <<<<<<< HEAD
+<<<<<<< HEAD
     "build": "next build",
 =======
     "genkit:watch": "genkit start",
+=======
+>>>>>>> db0b8e4 (reinitliaize the build stack and dependencies using latest versions)
     "build": "genkit build && next build",
 >>>>>>> 70718b0 (The app isn't starting. Please investigate what could be wrong based on)
     "start": "next start",
     "lint": "next lint"
   },
   "dependencies": {
+<<<<<<< HEAD
     "@genkit-ai/googleai": "^1.14.1",
 <<<<<<< HEAD
     "@genkit-ai/vertexai": "^1.14.1",
 =======
 >>>>>>> 70718b0 (The app isn't starting. Please investigate what could be wrong based on)
+=======
+    "@genkit-ai/googleai": "^1.14.0",
+>>>>>>> db0b8e4 (reinitliaize the build stack and dependencies using latest versions)
     "@hookform/resolvers": "^4.1.3",
     "@radix-ui/react-accordion": "^1.2.3",
     "@radix-ui/react-alert-dialog": "^1.1.6",
@@ -50,10 +57,14 @@
     "genkit": "1.14.0",
     "lucide-react": "^0.475.0",
 <<<<<<< HEAD
+<<<<<<< HEAD
     "next": "^14.2.5",
 =======
     "next": "14.2.5",
 >>>>>>> 70718b0 (The app isn't starting. Please investigate what could be wrong based on)
+=======
+    "next": "^14.2.5",
+>>>>>>> db0b8e4 (reinitliaize the build stack and dependencies using latest versions)
     "react": "^18.3.1",
     "react-day-picker": "^8.10.1",
     "react-dom": "^18.3.1",
@@ -64,6 +75,7 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+<<<<<<< HEAD
 <<<<<<< HEAD
     "@types/node": "^20.14.13",
     "@types/react": "^18.3.3",
@@ -81,5 +93,14 @@
     "tailwindcss": "^3.4.1",
     "typescript": "^5"
 >>>>>>> 70718b0 (The app isn't starting. Please investigate what could be wrong based on)
+=======
+    "@types/node": "^20.14.13",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "genkit-cli": "1.14.0",
+    "postcss": "^8.4.40",
+    "tailwindcss": "^3.4.7",
+    "typescript": "^5.5.4"
+>>>>>>> db0b8e4 (reinitliaize the build stack and dependencies using latest versions)
   }
 }

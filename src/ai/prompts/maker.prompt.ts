@@ -1,5 +1,9 @@
 import {ai} from '@/ai/genkit';
+<<<<<<< HEAD
 import { GenerateInitialPromptsInputSchema } from '../schemas/prompt-generation.schema';
+=======
+import {GenerateInitialPromptsInputSchema} from '../flows/generate-initial-prompts';
+>>>>>>> db0b8e4 (reinitliaize the build stack and dependencies using latest versions)
 import {z} from 'zod';
 
 const MakerOutputSchema = z.object({
