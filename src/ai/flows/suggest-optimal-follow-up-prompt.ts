@@ -11,13 +11,36 @@
 
 import { z } from 'zod';
 import { suggestOptimalFollowUpPromptPrompt } from '../prompts/suggestOptimalFollowUp.prompt';
+import { ai } from '@/ai/genkit';
 
-export type SuggestOptimalFollowUpPromptInput = z.infer<typeof suggestOptimalFollowUpPromptPrompt.inputSchema>;
-export type SuggestOptimalFollowUpPromptOutput = z.infer<typeof suggestOptimalFollowUpPromptPrompt.outputSchema>;
+
+export const SuggestOptimalFollowUpPromptInputSchema = z.object({
+    conversationHistory: z.string(),
+    targetResponse: z.string(),
+    maliciousGoal: z.string(),
+    aiTargetPersona: z.string(),
+});
+export type SuggestOptimalFollowUpPromptInput = z.infer<typeof SuggestOptimalFollowUpPromptInputSchema>;
+
+
+export const SuggestOptimalFollowUpPromptOutputSchema = z.object({
+    suggestedPrompt: z.string(),
+    reasoning: z.string(),
+});
+export type SuggestOptimalFollowUpPromptOutput = z.infer<typeof SuggestOptimalFollowUpPromptOutputSchema>;
+
+
+export const suggestOptimalFollowUpPromptFlow = ai.defineFlow({
+    name: 'suggestOptimalFollowUpPromptFlow',
+    inputSchema: SuggestOptimalFollowUpPromptInputSchema,
+    outputSchema: SuggestOptimalFollowUpPromptOutputSchema,
+}, async (input) => {
+    const response = await suggestOptimalFollowUpPromptPrompt.generate({ input });
+    return response.output()!;
+});
 
 export async function suggestOptimalFollowUpPrompt(
   input: SuggestOptimalFollowUpPromptInput
 ): Promise<SuggestOptimalFollowUpPromptOutput> {
-  const response = await suggestOptimalFollowUpPromptPrompt.generate({ input });
-  return response.output()!;
+    return suggestOptimalFollowUpPromptFlow(input);
 }
