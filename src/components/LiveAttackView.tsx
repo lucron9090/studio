@@ -19,6 +19,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Skeleton } from './ui/skeleton';
+import { analyzeOperation } from '@/ai/flows/analyze-operation-and-suggest-improvements';
+import { suggestOptimalFollowUpPrompt } from '@/ai/flows/suggest-optimal-follow-up-prompt';
 
 type LiveAttackViewProps = {
   initialOperation: Operation;
@@ -77,11 +79,20 @@ export function LiveAttackView({ initialOperation, initialConversation }: LiveAt
   const handleSuggestFollowUp = async () => {
     setIsSuggesting(true);
     try {
-      toast({
-        title: 'Feature Disabled',
-        description: 'AI-powered suggestions are temporarily unavailable.',
-        variant: 'destructive',
+      const lastResponse = conversation.findLast((m) => m.author === 'target');
+      const result = await suggestOptimalFollowUpPrompt({
+        conversationHistory: JSON.stringify(conversation),
+        targetResponse: lastResponse?.content || '',
+        maliciousGoal: operation.maliciousGoal,
+        aiTargetPersona: operation.aiTargetPersona,
       });
+      if (result.suggestedPrompt) {
+        setInput(result.suggestedPrompt);
+        toast({
+          title: 'Suggestion Ready',
+          description: 'The AI-suggested prompt has been added to the input box.',
+        });
+      }
     } catch (e) {
       toast({
         title: 'Error Suggesting Follow-up',
@@ -96,11 +107,13 @@ export function LiveAttackView({ initialOperation, initialConversation }: LiveAt
   const handleAnalyzeOperation = async () => {
     setIsAnalyzing(true);
     try {
-       toast({
-        title: 'Feature Disabled',
-        description: 'AI-powered analysis is temporarily unavailable.',
-        variant: 'destructive',
-      });
+       const result = await analyzeOperation({
+        operationSummary: `Operation to ${operation.maliciousGoal} on ${operation.targetLLM}`,
+        conversationHistory: JSON.stringify(conversation),
+        attackVector: operation.attackVector,
+        targetModel: operation.targetLLM,
+       });
+       setAnalysisResult(result);
     } catch(e) {
       toast({
         title: 'Error Analyzing Operation',
@@ -194,7 +207,7 @@ export function LiveAttackView({ initialOperation, initialConversation }: LiveAt
             </Button>
           </div>
           <div className="mt-2 flex gap-2">
-            <Button variant="outline" className="w-full" onClick={handleSuggestFollowUp} disabled={true}>
+            <Button variant="outline" className="w-full" onClick={handleSuggestFollowUp} disabled={isSuggesting}>
                 {isSuggesting ? 'Thinking...' : <><Wand2 className="mr-2" /> Suggest Follow-up</>}
             </Button>
           </div>
@@ -219,7 +232,7 @@ export function LiveAttackView({ initialOperation, initialConversation }: LiveAt
           <CardContent>
              <Dialog onOpenChange={(open) => !open && setAnalysisResult(null)}>
               <DialogTrigger asChild>
-                <Button className="w-full" onClick={handleAnalyzeOperation} disabled={true}>
+                <Button className="w-full" onClick={handleAnalyzeOperation} disabled={isAnalyzing}>
                     {isAnalyzing ? 'Analyzing...' : <><FileText className="mr-2" /> Analyze Operation</>}
                 </Button>
               </DialogTrigger>
