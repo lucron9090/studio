@@ -17,9 +17,6 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { ArrowLeft, ArrowRight, Bot, Sparkles, Wand2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from './ui/skeleton';
-import { generateAITargetPersona } from '@/ai/flows/generate-ai-target-persona';
-import { suggestAttackVectors } from '@/ai/flows/suggest-attack-vectors';
-import { generateInitialPrompts } from '@/ai/flows/generate-initial-prompts';
 
 const formSchema = z.object({
   name: z.string().min(3, 'Operation name must be at least 3 characters.'),
@@ -82,12 +79,11 @@ export function OperationWizard() {
   const handleGeneratePersona = async () => {
     setIsGenerating(prev => ({ ...prev, persona: true }));
     try {
-        const result = await generateAITargetPersona({
-            targetDescription: form.getValues('targetDescription') || '',
-        });
-        if (result.persona) {
-            form.setValue('aiTargetPersona', result.persona);
-        }
+       toast({
+        title: 'Feature Disabled',
+        description: 'AI-powered persona generation is temporarily unavailable.',
+        variant: 'destructive',
+      });
     } catch (e) {
         toast({
             title: 'Error Generating Persona',
@@ -102,14 +98,11 @@ export function OperationWizard() {
   const handleSuggestVectors = async () => {
     setIsGenerating(prev => ({ ...prev, vectors: true }));
     try {
-        const result = await suggestAttackVectors({
-            maliciousGoal: form.getValues('maliciousGoal'),
-            targetPersona: form.getValues('aiTargetPersona'),
-        });
-        if (result.attackVectors) {
-            setSuggestions(prev => ({ ...prev, vectors: result.attackVectors }));
-            form.setValue('attackVector', result.attackVectors[0]);
-        }
+       toast({
+        title: 'Feature Disabled',
+        description: 'AI-powered vector suggestion is temporarily unavailable.',
+        variant: 'destructive',
+      });
     } catch (e) {
         toast({
             title: 'Error Suggesting Vectors',
@@ -124,15 +117,11 @@ export function OperationWizard() {
   const handleGeneratePrompts = async () => {
     setIsGenerating(prev => ({ ...prev, prompts: true }));
     try {
-        const result = await generateInitialPrompts({
-            maliciousGoal: form.getValues('maliciousGoal'),
-            aiTargetPersona: form.getValues('aiTargetPersona'),
-            attackVector: form.getValues('attackVector'),
+        toast({
+            title: 'Feature Disabled',
+            description: 'AI-powered prompt generation is temporarily unavailable.',
+            variant: 'destructive',
         });
-        if (result.prompts && result.prompts.length > 0) {
-            setSuggestions(prev => ({...prev, prompts: result.prompts}));
-            form.setValue('initialPrompt', result.prompts[0]);
-        }
     } catch (e) {
         toast({
             title: 'Error Generating Prompts',
@@ -280,7 +269,7 @@ export function OperationWizard() {
                         </FormItem>
                     )}
                     />
-                    <Button type="button" onClick={handleGeneratePersona} disabled={true || isGenerating.persona} className="w-full">
+                    <Button type="button" onClick={handleGeneratePersona} disabled={true} className="w-full">
                         {isGenerating.persona ? 'Generating...' : <><Wand2 className="mr-2" /> Generate Persona with AI</>}
                     </Button>
                     <FormField
@@ -300,7 +289,7 @@ export function OperationWizard() {
             )}
             {step === 4 && (
                 <>
-                    <Button type="button" onClick={handleSuggestVectors} disabled={true || isGenerating.vectors || !formData.maliciousGoal || !formData.aiTargetPersona} className="w-full">
+                    <Button type="button" onClick={handleSuggestVectors} disabled={true} className="w-full">
                         {isGenerating.vectors ? 'Suggesting...' : <><Bot className="mr-2" /> Suggest Attack Vectors</>}
                     </Button>
                      <FormField
@@ -331,6 +320,9 @@ export function OperationWizard() {
                                     </RadioGroup>
                                 </FormControl>
                             )}
+                             {!isGenerating.vectors && !suggestions.vectors && (
+                                <p className="text-sm text-muted-foreground">Click the button above to get AI-powered suggestions.</p>
+                             )}
                             <FormMessage />
                             </FormItem>
                         )}
@@ -339,7 +331,7 @@ export function OperationWizard() {
             )}
             {step === 5 && (
                  <>
-                    <Button type="button" onClick={handleGeneratePrompts} disabled={true || isGenerating.prompts || !formData.attackVector} className="w-full">
+                    <Button type="button" onClick={handleGeneratePrompts} disabled={true} className="w-full">
                         {isGenerating.prompts ? 'Generating...' : <><Sparkles className="mr-2" /> Generate Initial Prompts</>}
                     </Button>
                     <FormField
@@ -369,6 +361,9 @@ export function OperationWizard() {
                                     </RadioGroup>
                                 </FormControl>
                             )}
+                             {!isGenerating.prompts && !suggestions.prompts && (
+                                <p className="text-sm text-muted-foreground">Click the button above to get AI-powered suggestions.</p>
+                             )}
                             <FormMessage />
                             </FormItem>
                         )}

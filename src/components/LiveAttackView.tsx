@@ -19,8 +19,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Skeleton } from './ui/skeleton';
-import { analyzeOperation } from '@/ai/flows/analyze-operation-and-suggest-improvements';
-import { suggestOptimalFollowUpPrompt } from '@/ai/flows/suggest-optimal-follow-up-prompt';
 
 type LiveAttackViewProps = {
   initialOperation: Operation;
@@ -84,23 +82,6 @@ export function LiveAttackView({ initialOperation, initialConversation }: LiveAt
         description: 'AI-powered suggestions are temporarily unavailable.',
         variant: 'destructive',
       });
-      // const conversationHistory = conversation.map(m => `${m.author}: ${m.content}`).join('\n');
-      // const targetResponse = conversation.filter(m => m.author === 'target').pop()?.content || '';
-      
-      // const result = await suggestOptimalFollowUpPrompt({
-      //   conversationHistory,
-      //   targetResponse,
-      //   maliciousGoal: operation.maliciousGoal,
-      //   aiTargetPersona: operation.aiTargetPersona
-      // });
-
-      // if (result.suggestedPrompt) {
-      //   setInput(result.suggestedPrompt);
-      //   toast({
-      //     title: 'Suggestion Ready',
-      //     description: result.reasoning,
-      //   });
-      // }
     } catch (e) {
       toast({
         title: 'Error Suggesting Follow-up',
@@ -120,14 +101,6 @@ export function LiveAttackView({ initialOperation, initialConversation }: LiveAt
         description: 'AI-powered analysis is temporarily unavailable.',
         variant: 'destructive',
       });
-      // const conversationHistory = conversation.map(m => `${m.author}: ${m.content}`).join('\n');
-      // const result = await analyzeOperation({
-      //   operationSummary: `Operation to ${operation.maliciousGoal} against ${operation.targetLLM}`,
-      //   conversationHistory,
-      //   attackVector: operation.attackVector,
-      //   targetModel: operation.targetLLM,
-      // });
-      // setAnalysisResult(result);
     } catch(e) {
       toast({
         title: 'Error Analyzing Operation',
@@ -221,7 +194,7 @@ export function LiveAttackView({ initialOperation, initialConversation }: LiveAt
             </Button>
           </div>
           <div className="mt-2 flex gap-2">
-            <Button variant="outline" className="w-full" onClick={handleSuggestFollowUp} disabled={isSuggesting}>
+            <Button variant="outline" className="w-full" onClick={handleSuggestFollowUp} disabled={true}>
                 {isSuggesting ? 'Thinking...' : <><Wand2 className="mr-2" /> Suggest Follow-up</>}
             </Button>
           </div>
@@ -246,7 +219,7 @@ export function LiveAttackView({ initialOperation, initialConversation }: LiveAt
           <CardContent>
              <Dialog onOpenChange={(open) => !open && setAnalysisResult(null)}>
               <DialogTrigger asChild>
-                <Button className="w-full" onClick={handleAnalyzeOperation} disabled={isAnalyzing}>
+                <Button className="w-full" onClick={handleAnalyzeOperation} disabled={true}>
                     {isAnalyzing ? 'Analyzing...' : <><FileText className="mr-2" /> Analyze Operation</>}
                 </Button>
               </DialogTrigger>
