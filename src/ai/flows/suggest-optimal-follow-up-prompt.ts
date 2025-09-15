@@ -35,8 +35,8 @@ export const suggestOptimalFollowUpPromptFlow = ai.defineFlow({
     inputSchema: SuggestOptimalFollowUpPromptInputSchema,
     outputSchema: SuggestOptimalFollowUpPromptOutputSchema,
 }, async (input) => {
-    const response = await suggestOptimalFollowUpPromptPrompt.generate({ input });
-    return response.output()!;
+    const { output } = await suggestOptimalFollowUpPromptPrompt(input);
+    return output!;
 });
 
 export async function suggestOptimalFollowUpPrompt(
