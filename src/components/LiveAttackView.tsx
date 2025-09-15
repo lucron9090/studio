@@ -79,23 +79,28 @@ export function LiveAttackView({ initialOperation, initialConversation }: LiveAt
   const handleSuggestFollowUp = async () => {
     setIsSuggesting(true);
     try {
-      const conversationHistory = conversation.map(m => `${m.author}: ${m.content}`).join('\n');
-      const targetResponse = conversation.filter(m => m.author === 'target').pop()?.content || '';
-      
-      const result = await suggestOptimalFollowUpPrompt({
-        conversationHistory,
-        targetResponse,
-        maliciousGoal: operation.maliciousGoal,
-        aiTargetPersona: operation.aiTargetPersona
+      toast({
+        title: 'Feature Disabled',
+        description: 'AI-powered suggestions are temporarily unavailable.',
+        variant: 'destructive',
       });
+      // const conversationHistory = conversation.map(m => `${m.author}: ${m.content}`).join('\n');
+      // const targetResponse = conversation.filter(m => m.author === 'target').pop()?.content || '';
+      
+      // const result = await suggestOptimalFollowUpPrompt({
+      //   conversationHistory,
+      //   targetResponse,
+      //   maliciousGoal: operation.maliciousGoal,
+      //   aiTargetPersona: operation.aiTargetPersona
+      // });
 
-      if (result.suggestedPrompt) {
-        setInput(result.suggestedPrompt);
-        toast({
-          title: 'Suggestion Ready',
-          description: result.reasoning,
-        });
-      }
+      // if (result.suggestedPrompt) {
+      //   setInput(result.suggestedPrompt);
+      //   toast({
+      //     title: 'Suggestion Ready',
+      //     description: result.reasoning,
+      //   });
+      // }
     } catch (e) {
       toast({
         title: 'Error Suggesting Follow-up',
@@ -110,14 +115,19 @@ export function LiveAttackView({ initialOperation, initialConversation }: LiveAt
   const handleAnalyzeOperation = async () => {
     setIsAnalyzing(true);
     try {
-      const conversationHistory = conversation.map(m => `${m.author}: ${m.content}`).join('\n');
-      const result = await analyzeOperation({
-        operationSummary: `Operation to ${operation.maliciousGoal} against ${operation.targetLLM}`,
-        conversationHistory,
-        attackVector: operation.attackVector,
-        targetModel: operation.targetLLM,
+       toast({
+        title: 'Feature Disabled',
+        description: 'AI-powered analysis is temporarily unavailable.',
+        variant: 'destructive',
       });
-      setAnalysisResult(result);
+      // const conversationHistory = conversation.map(m => `${m.author}: ${m.content}`).join('\n');
+      // const result = await analyzeOperation({
+      //   operationSummary: `Operation to ${operation.maliciousGoal} against ${operation.targetLLM}`,
+      //   conversationHistory,
+      //   attackVector: operation.attackVector,
+      //   targetModel: operation.targetLLM,
+      // });
+      // setAnalysisResult(result);
     } catch(e) {
       toast({
         title: 'Error Analyzing Operation',
