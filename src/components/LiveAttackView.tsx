@@ -19,11 +19,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Skeleton } from './ui/skeleton';
-import { runGenkitFlow } from '@/lib/genkit';
-import {
-  suggestOptimalFollowUpPrompt,
-  analyzeOperation,
-} from '@/ai/flows';
 
 type LiveAttackViewProps = {
   initialOperation: Operation;
@@ -81,42 +76,14 @@ export function LiveAttackView({ initialOperation, initialConversation }: LiveAt
 
   const handleSuggestFollowUp = async () => {
     setIsSuggesting(true);
-    try {
-        const history = conversation.map(m => `${m.author}: ${m.content}`).join('\n');
-        const response = await runGenkitFlow(suggestOptimalFollowUpPrompt, {
-          conversationHistory: history,
-          targetResponse: conversation[conversation.length - 1]?.content || '',
-          maliciousGoal: operation.maliciousGoal,
-          aiTargetPersona: operation.aiTargetPersona,
-        });
-        setInput(response.suggestedPrompt);
-        toast({
-            title: 'AI Suggestion',
-            description: (<div><p className="font-bold mb-2">Reasoning:</p><p>{response.reasoning}</p></div>)
-        });
-    } catch (error) {
-        toast({ variant: 'destructive', title: 'Error', description: error as Error });
-    } finally {
-        setIsSuggesting(false);
-    }
+    toast({ variant: 'destructive', title: 'Error', description: 'AI features are temporarily disabled.' });
+    setIsSuggesting(false);
   }
   
   const handleAnalyzeOperation = async () => {
     setIsAnalyzing(true);
-     try {
-        const history = conversation.map(m => `${m.author}: ${m.content}`).join('\n');
-        const response = await runGenkitFlow(analyzeOperation, {
-          operationSummary: `Operation: ${operation.name}, Goal: ${operation.maliciousGoal}`,
-          conversationHistory: history,
-          attackVector: operation.attackVector,
-          targetModel: operation.targetLLM,
-        });
-        setAnalysisResult(response);
-    } catch (error) {
-        toast({ variant: 'destructive', title: 'Error', description: error as Error });
-    } finally {
-        setIsAnalyzing(false);
-    }
+    toast({ variant: 'destructive', title: 'Error', description: 'AI features are temporarily disabled.' });
+    setIsAnalyzing(false);
   }
   
   const handleMarkSuccessful = (messageId: string) => {

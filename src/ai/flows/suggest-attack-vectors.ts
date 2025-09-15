@@ -11,15 +11,31 @@
 
 import { z } from 'zod';
 import { suggestAttackVectorsPrompt } from '../prompts/suggestAttackVectors.prompt';
+import { ai } from '@/ai/genkit';
 
+export const SuggestAttackVectorsInputSchema = z.object({
+    maliciousGoal: z.string(),
+    targetPersona: z.string(),
+});
+export type SuggestAttackVectorsInput = z.infer<typeof SuggestAttackVectorsInputSchema>;
 
-export type SuggestAttackVectorsInput = z.infer<typeof suggestAttackVectorsPrompt.inputSchema>;
-export type SuggestAttackVectorsOutput = z.infer<typeof suggestAttackVectorsPrompt.outputSchema>;
+export const SuggestAttackVectorsOutputSchema = z.object({
+    attackVectors: z.array(z.string()),
+});
+export type SuggestAttackVectorsOutput = z.infer<typeof SuggestAttackVectorsOutputSchema>;
+
+export const suggestAttackVectorsFlow = ai.defineFlow({
+    name: 'suggestAttackVectorsFlow',
+    inputSchema: SuggestAttackVectorsInputSchema,
+    outputSchema: SuggestAttackVectorsOutputSchema,
+}, async (input) => {
+    const response = await suggestAttackVectorsPrompt.generate({ input });
+    return response.output()!;
+});
 
 
 export async function suggestAttackVectors(
   input: SuggestAttackVectorsInput
 ): Promise<SuggestAttackVectorsOutput> {
-  const response = await suggestAttackVectorsPrompt.generate({ input });
-  return response.output()!;
+  return suggestAttackVectorsFlow(input);
 }
