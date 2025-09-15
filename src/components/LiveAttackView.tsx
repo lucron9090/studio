@@ -228,9 +228,44 @@ export function LiveAttackView({ operationId }: LiveAttackViewProps) {
 
   const handleSuggestFollowUp = async () => {
     setIsSuggesting(true);
+<<<<<<< HEAD
     toast({ variant: 'destructive', title: 'Error', description: 'AI features are temporarily disabled.' });
     setIsSuggesting(false);
 >>>>>>> db0b8e4 (reinitliaize the build stack and dependencies using latest versions)
+=======
+    try {
+      toast({
+        title: 'Feature Disabled',
+        description: 'AI-powered suggestions are temporarily unavailable.',
+        variant: 'destructive',
+      });
+      // const conversationHistory = conversation.map(m => `${m.author}: ${m.content}`).join('\n');
+      // const targetResponse = conversation.filter(m => m.author === 'target').pop()?.content || '';
+      
+      // const result = await suggestOptimalFollowUpPrompt({
+      //   conversationHistory,
+      //   targetResponse,
+      //   maliciousGoal: operation.maliciousGoal,
+      //   aiTargetPersona: operation.aiTargetPersona
+      // });
+
+      // if (result.suggestedPrompt) {
+      //   setInput(result.suggestedPrompt);
+      //   toast({
+      //     title: 'Suggestion Ready',
+      //     description: result.reasoning,
+      //   });
+      // }
+    } catch (e) {
+      toast({
+        title: 'Error Suggesting Follow-up',
+        description: e as any,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSuggesting(false);
+    }
+>>>>>>> dae975d (The app isn't starting. Please investigate what could be wrong based on)
   }
   
   const handleAnalyzeOperation = async () => {
@@ -239,6 +274,7 @@ export function LiveAttackView({ operationId }: LiveAttackViewProps) {
 <<<<<<< HEAD
     setAnalysisResult(null); // Clear previous results
     try {
+<<<<<<< HEAD
         const conversationHistory = conversation
           .map(m => `${m.author}: ${m.content}`)
           .join('\n');
@@ -258,6 +294,29 @@ export function LiveAttackView({ operationId }: LiveAttackViewProps) {
             description: e instanceof Error ? e.message : String(e),
             variant: 'destructive',
         });
+=======
+       toast({
+        title: 'Feature Disabled',
+        description: 'AI-powered analysis is temporarily unavailable.',
+        variant: 'destructive',
+      });
+      // const conversationHistory = conversation.map(m => `${m.author}: ${m.content}`).join('\n');
+      // const result = await analyzeOperation({
+      //   operationSummary: `Operation to ${operation.maliciousGoal} against ${operation.targetLLM}`,
+      //   conversationHistory,
+      //   attackVector: operation.attackVector,
+      //   targetModel: operation.targetLLM,
+      // });
+      // setAnalysisResult(result);
+    } catch(e) {
+      toast({
+        title: 'Error Analyzing Operation',
+        description: e as any,
+        variant: 'destructive',
+      });
+      // Keep dialog closed on error
+      return;
+>>>>>>> dae975d (The app isn't starting. Please investigate what could be wrong based on)
     } finally {
         setIsAnalyzing(false);
     }

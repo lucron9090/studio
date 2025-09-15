@@ -388,7 +388,7 @@ export function OperationWizard() {
                         </FormItem>
                     )}
                     />
-                    <Button type="button" onClick={handleGeneratePersona} disabled={isGenerating.persona} className="w-full">
+                    <Button type="button" onClick={handleGeneratePersona} disabled={true || isGenerating.persona} className="w-full">
                         {isGenerating.persona ? 'Generating...' : <><Wand2 className="mr-2" /> Generate Persona with AI</>}
                     </Button>
                     <FormField
@@ -408,6 +408,7 @@ export function OperationWizard() {
             )}
             {step === 4 && (
                 <>
+<<<<<<< HEAD
                     <FormField
                         control={form.control}
                         name="attackVector"
@@ -485,6 +486,10 @@ export function OperationWizard() {
 
                     <Button type="button" onClick={handleSuggestVectors} disabled={isGenerating.vectors || !formData.maliciousGoal || !formData.aiTargetPersona} className="w-full">
                         {isGenerating.vectors ? 'Suggesting...' : <><Bot className="mr-2" /> Suggest New Vectors with AI</>}
+=======
+                    <Button type="button" onClick={handleSuggestVectors} disabled={true || isGenerating.vectors || !formData.maliciousGoal || !formData.aiTargetPersona} className="w-full">
+                        {isGenerating.vectors ? 'Suggesting...' : <><Bot className="mr-2" /> Suggest Attack Vectors</>}
+>>>>>>> dae975d (The app isn't starting. Please investigate what could be wrong based on)
                     </Button>
                      <FormField
                         control={form.control}
@@ -530,7 +535,7 @@ export function OperationWizard() {
             )}
             {step === 5 && (
                  <>
-                    <Button type="button" onClick={handleGeneratePrompts} disabled={isGenerating.prompts || !formData.attackVector} className="w-full">
+                    <Button type="button" onClick={handleGeneratePrompts} disabled={true || isGenerating.prompts || !formData.attackVector} className="w-full">
                         {isGenerating.prompts ? 'Generating...' : <><Sparkles className="mr-2" /> Generate Initial Prompts</>}
                     </Button>
                     <FormField
