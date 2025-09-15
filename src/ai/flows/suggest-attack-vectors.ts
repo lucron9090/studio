@@ -29,8 +29,8 @@ export const suggestAttackVectorsFlow = ai.defineFlow({
     inputSchema: SuggestAttackVectorsInputSchema,
     outputSchema: SuggestAttackVectorsOutputSchema,
 }, async (input) => {
-    const response = await suggestAttackVectorsPrompt.generate({ input });
-    return response.output()!;
+    const { output } = await suggestAttackVectorsPrompt(input);
+    return output!;
 });
 
 

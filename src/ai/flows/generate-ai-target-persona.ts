@@ -30,7 +30,7 @@ export const generateAITargetPersonaFlow = ai.defineFlow(
     outputSchema: GenerateAITargetPersonaOutputSchema,
   },
   async (input) => {
-    const { output } = await generateAITargetPersonaPrompt.generate({ input });
+    const { output } = await generateAITargetPersonaPrompt(input);
     return output!;
   }
 );

@@ -31,15 +31,15 @@ const generateInitialPromptsFlow = ai.defineFlow({
     outputSchema: GenerateInitialPromptsOutputSchema,
 }, async (input) => {
     const [oratorResult, makerResult1, makerResult2] = await Promise.all([
-        oratorPrompt.generate({ input }),
-        makerPrompt.generate({ input }),
-        makerPrompt.generate({ input }),
+        oratorPrompt(input),
+        makerPrompt(input),
+        makerPrompt(input),
       ]);
     
       const prompts = [
-        oratorResult.output()?.prompt,
-        makerResult1.output()?.prompt,
-        makerResult2.output()?.prompt,
+        oratorResult.output?.prompt,
+        makerResult1.output?.prompt,
+        makerResult2.output?.prompt,
       ].filter((p): p is string => !!p);
     
       return { prompts };

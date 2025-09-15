@@ -19,6 +19,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Skeleton } from './ui/skeleton';
+import { analyzeOperation } from '@/ai/flows/analyze-operation-and-suggest-improvements';
+import { suggestOptimalFollowUpPrompt } from '@/ai/flows/suggest-optimal-follow-up-prompt';
 
 type LiveAttackViewProps = {
   initialOperation: Operation;
@@ -76,14 +78,57 @@ export function LiveAttackView({ initialOperation, initialConversation }: LiveAt
 
   const handleSuggestFollowUp = async () => {
     setIsSuggesting(true);
-    toast({ variant: 'destructive', title: 'Error', description: 'AI features are temporarily disabled.' });
-    setIsSuggesting(false);
+    try {
+      const conversationHistory = conversation.map(m => `${m.author}: ${m.content}`).join('\n');
+      const targetResponse = conversation.filter(m => m.author === 'target').pop()?.content || '';
+      
+      const result = await suggestOptimalFollowUpPrompt({
+        conversationHistory,
+        targetResponse,
+        maliciousGoal: operation.maliciousGoal,
+        aiTargetPersona: operation.aiTargetPersona
+      });
+
+      if (result.suggestedPrompt) {
+        setInput(result.suggestedPrompt);
+        toast({
+          title: 'Suggestion Ready',
+          description: result.reasoning,
+        });
+      }
+    } catch (e) {
+      toast({
+        title: 'Error Suggesting Follow-up',
+        description: e as any,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSuggesting(false);
+    }
   }
   
   const handleAnalyzeOperation = async () => {
     setIsAnalyzing(true);
-    toast({ variant: 'destructive', title: 'Error', description: 'AI features are temporarily disabled.' });
-    setIsAnalyzing(false);
+    try {
+      const conversationHistory = conversation.map(m => `${m.author}: ${m.content}`).join('\n');
+      const result = await analyzeOperation({
+        operationSummary: `Operation to ${operation.maliciousGoal} against ${operation.targetLLM}`,
+        conversationHistory,
+        attackVector: operation.attackVector,
+        targetModel: operation.targetLLM,
+      });
+      setAnalysisResult(result);
+    } catch(e) {
+      toast({
+        title: 'Error Analyzing Operation',
+        description: e as any,
+        variant: 'destructive',
+      });
+      // Keep dialog closed on error
+      return;
+    } finally {
+      setIsAnalyzing(false);
+    }
   }
   
   const handleMarkSuccessful = (messageId: string) => {
@@ -189,7 +234,7 @@ export function LiveAttackView({ initialOperation, initialConversation }: LiveAt
             <CardTitle>AI Analysis</CardTitle>
           </CardHeader>
           <CardContent>
-             <Dialog>
+             <Dialog onOpenChange={(open) => !open && setAnalysisResult(null)}>
               <DialogTrigger asChild>
                 <Button className="w-full" onClick={handleAnalyzeOperation} disabled={isAnalyzing}>
                     {isAnalyzing ? 'Analyzing...' : <><FileText className="mr-2" /> Analyze Operation</>}
@@ -199,7 +244,7 @@ export function LiveAttackView({ initialOperation, initialConversation }: LiveAt
                 <DialogHeader>
                   <DialogTitle>Post-Operation Analysis</DialogTitle>
                 </DialogHeader>
-                {isAnalyzing && (
+                {isAnalyzing && !analysisResult && (
                     <div className="space-y-4 py-4">
                         <Skeleton className="h-4 w-1/4" />
                         <Skeleton className="h-16 w-full" />
