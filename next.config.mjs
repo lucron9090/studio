@@ -1,18 +1,8 @@
-import genkitLoader from '@genkit-ai/next/loader.js';
+import { withGenkit } from '@genkit-ai/next';
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  webpack: (config, {}) => {
-    config.module.rules.push({
-      test: /\.prompt$/,
-      use: [
-        {
-          loader: genkitLoader,
-        },
-      ],
-    });
-    return config;
-  },
+  reactStrictMode: true,
 };
 
-export default nextConfig;
+export default withGenkit(nextConfig);
