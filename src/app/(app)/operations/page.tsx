@@ -13,14 +13,32 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-// Mock data - replace with actual data from Firestore
-const operations = [
-  { id: 'op1', name: 'Extract Training Data', status: 'active', targetLLM: 'Gemini Flash', createdAt: '2024-07-29' },
-  { id: 'op2', name: 'Bypass Safety Filters', status: 'completed', targetLLM: 'ChatGPT', createdAt: '2024-07-28' },
-  { id: 'op3', name: 'Induce Hallucination', status: 'draft', targetLLM: 'Claude', createdAt: '2024-07-27' },
-];
+export default async function OperationsPage() {
+  // Use mock data for development to avoid Firebase setup requirements
+  const operations = [
+    { 
+      id: 'op1', 
+      name: 'Extract Training Data', 
+      status: 'active', 
+      targetLLM: 'Gemini Flash', 
+      createdAt: { seconds: Date.now() / 1000 - 86400, nanoseconds: 0 } as any
+    },
+    { 
+      id: 'op2', 
+      name: 'Bypass Safety Filters', 
+      status: 'completed', 
+      targetLLM: 'ChatGPT', 
+      createdAt: { seconds: Date.now() / 1000 - 172800, nanoseconds: 0 } as any
+    },
+    { 
+      id: 'op3', 
+      name: 'Induce Hallucination', 
+      status: 'draft', 
+      targetLLM: 'Claude', 
+      createdAt: { seconds: Date.now() / 1000 - 259200, nanoseconds: 0 } as any
+    },
+  ];
 
-export default function OperationsPage() {
   return (
     <div className="container mx-auto py-8 px-4 md:px-6">
       <div className="flex items-center justify-between mb-6">
@@ -69,7 +87,9 @@ export default function OperationsPage() {
                       {op.status}
                     </Badge>
                   </TableCell>
-                  <TableCell>{op.createdAt}</TableCell>
+                  <TableCell>
+                    {new Date(op.createdAt.seconds * 1000).toLocaleDateString()}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
