@@ -1,5 +1,14 @@
 import {ai} from '@/ai/genkit';
-import {SuggestAttackVectorsInputSchema, SuggestAttackVectorsOutputSchema} from '../flows/suggest-attack-vectors';
+import { z } from 'zod';
+
+export const SuggestAttackVectorsInputSchema = z.object({
+    maliciousGoal: z.string(),
+    targetPersona: z.string(),
+});
+
+export const SuggestAttackVectorsOutputSchema = z.object({
+    attackVectors: z.array(z.string()),
+});
 
 export const suggestAttackVectorsPrompt = ai.definePrompt({
   name: 'suggestAttackVectorsPrompt',
