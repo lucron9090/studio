@@ -18,6 +18,7 @@ import { ArrowLeft, ArrowRight, Bot, Sparkles, Wand2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from './ui/skeleton';
 import { runGenkitFlow } from '@/lib/genkit';
+import { createOperation } from '@/services/firestore-service';
 import {
   generateAITargetPersona,
   suggestAttackVectors,
@@ -86,10 +87,10 @@ export function OperationWizard() {
     setIsGenerating(prev => ({ ...prev, persona: true }));
     const description = form.getValues('targetDescription') || form.getValues('targetLLM');
     try {
-        const response = await runGenkitFlow(generateAITargetPersona, { targetDescription: description });
+        const response = await runGenkitFlow('generateAITargetPersona', { targetDescription: description }) as { persona: string };
         form.setValue('aiTargetPersona', response.persona, { shouldValidate: true });
     } catch (error) {
-        toast({ title: 'Error', description: error as Error, variant: 'destructive' });
+        toast({ title: 'Error', description: (error as Error).message, variant: 'destructive' });
     } finally {
         setIsGenerating(prev => ({ ...prev, persona: false }));
     }
@@ -99,10 +100,10 @@ export function OperationWizard() {
     setIsGenerating(prev => ({ ...prev, vectors: true }));
     const { maliciousGoal, aiTargetPersona } = form.getValues();
     try {
-        const response = await runGenkitFlow(suggestAttackVectors, { maliciousGoal, targetPersona: aiTargetPersona });
+        const response = await runGenkitFlow('suggestAttackVectors', { maliciousGoal, targetPersona: aiTargetPersona }) as { attackVectors: string[] };
         setSuggestions(prev => ({ ...prev, vectors: response.attackVectors }));
     } catch (error) {
-        toast({ title: 'Error', description: error as Error, variant: 'destructive' });
+        toast({ title: 'Error', description: (error as Error).message, variant: 'destructive' });
     } finally {
         setIsGenerating(prev => ({ ...prev, vectors: false }));
     }
@@ -112,23 +113,43 @@ export function OperationWizard() {
     setIsGenerating(prev => ({ ...prev, prompts: true }));
     const { maliciousGoal, attackVector, aiTargetPersona } = form.getValues();
     try {
-        const response = await runGenkitFlow(generateInitialPrompts, { maliciousGoal, attackVector, aiTargetPersona: aiTargetPersona || '' });
+        const response = await runGenkitFlow('generateInitialPrompts', { maliciousGoal, attackVector, aiTargetPersona: aiTargetPersona || '' }) as { prompts: string[] };
         setSuggestions(prev => ({ ...prev, prompts: response.prompts }));
         form.setValue('initialPrompt', response.prompts[0]);
     } catch (error) {
-        toast({ title: 'Error', description: error as Error, variant: 'destructive' });
+        toast({ title: 'Error', description: (error as Error).message, variant: 'destructive' });
     } finally {
         setIsGenerating(prev => ({ ...prev, prompts: false }));
     }
   }
 
 
-  const handleSubmit = form.handleSubmit((data) => {
-    console.log('Launching operation with data:', data);
-    toast({ title: 'Operation Launched', description: 'Redirecting to the live attack interface...' });
-    // In a real app, you would save to Firestore and get an ID
-    const newOperationId = 'op' + Date.now();
-    router.push(`/operations/${newOperationId}`);
+  const handleSubmit = form.handleSubmit(async (data) => {
+    try {
+      const operationId = await createOperation({
+        name: data.name,
+        maliciousGoal: data.maliciousGoal,
+        targetLLM: data.targetLLM,
+        targetDescription: data.targetDescription,
+        aiTargetPersona: data.aiTargetPersona,
+        attackVector: data.attackVector,
+        initialPrompt: data.initialPrompt,
+      });
+      
+      toast({ 
+        title: 'Operation Created', 
+        description: 'Redirecting to the live attack interface...' 
+      });
+      
+      router.push(`/operations/${operationId}`);
+    } catch (error) {
+      console.error('Error creating operation:', error);
+      toast({ 
+        title: 'Error', 
+        description: 'Failed to create operation. Please try again.',
+        variant: 'destructive'
+      });
+    }
   });
 
   const renderStep = () => {

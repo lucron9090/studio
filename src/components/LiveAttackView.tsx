@@ -1,15 +1,14 @@
 'use client';
 
-import type { Operation, ConversationMessage } from '@/lib/types';
 import { useState, useRef, useOptimistic, useEffect } from 'react';
-import { Send, Bot, FileText, Wand2, ShieldCheck } from 'lucide-react';
-import { Timestamp } from 'firebase/firestore';
+import { Send, Bot, FileText, Wand2, ShieldCheck, Target, Brain, AlertTriangle, Check, Copy } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { ScrollArea } from './ui/scroll-area';
 import { Avatar, AvatarFallback } from './ui/avatar';
+import { Badge } from './ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
@@ -21,28 +20,44 @@ import {
 import { Skeleton } from './ui/skeleton';
 import { runGenkitFlow } from '@/lib/genkit';
 import {
-  suggestOptimalFollowUpPrompt,
-  analyzeOperation,
+  sendPromptToTarget,
+  generateFollowUp,
+  generateOratorPrompt,
+  generateMakerPrompt,
 } from '@/ai/flows';
+import { 
+  getOperation, 
+  getConversationHistory, 
+  addConversationMessage,
+  saveSuccessfulPayload,
+  updateOperationStatus,
+  type Operation, 
+  type ConversationMessage 
+} from '@/services/firestore-service';
 
 type LiveAttackViewProps = {
-  initialOperation: Operation;
-  initialConversation: ConversationMessage[];
+  operationId: string;
 };
 
-export function LiveAttackView({ initialOperation, initialConversation }: LiveAttackViewProps) {
-  const [operation, setOperation] = useState(initialOperation);
-  const [conversation, setConversation] = useState<ConversationMessage[]>(initialConversation);
+export function LiveAttackView({ operationId }: LiveAttackViewProps) {
+  const [operation, setOperation] = useState<Operation | null>(null);
+  const [conversation, setConversation] = useState<ConversationMessage[]>([]);
   const [optimisticConversation, addOptimisticMessage] = useOptimistic<ConversationMessage[], ConversationMessage>(
     conversation,
     (state, newMessage) => [...state, newMessage]
   );
   const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSending, setIsSending] = useState(false);
   const [isSuggesting, setIsSuggesting] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState<{ summary: string; breachPoints: string; suggestedImprovements: string } | null>(null);
+  const [analysisResult, setAnalysisResult] = useState<any>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    loadOperationData();
+  }, [operationId]);
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -50,217 +65,486 @@ export function LiveAttackView({ initialOperation, initialConversation }: LiveAt
     }
   }, [optimisticConversation]);
 
-  const handleSendMessage = async () => {
-    if (!input.trim()) return;
+  const loadOperationData = async () => {
+    try {
+      const [operationData, conversationData] = await Promise.all([
+        getOperation(operationId),
+        getConversationHistory(operationId)
+      ]);
+      
+      if (operationData) {
+        setOperation(operationData);
+        setConversation(conversationData);
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: 'Operation not found',
+        });
+      }
+    } catch (error) {
+      console.error('Error loading operation:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to load operation data',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+  const handleSendMessage = async () => {
+    if (!input.trim() || !operation) return;
+
+    setIsSending(true);
+    
+    // Add operator message optimistically
     const operatorMessage: ConversationMessage = {
-      id: `op-${Date.now()}`,
-      author: 'operator',
+      operationId,
+      role: 'operator',
       content: input,
-      timestamp: Timestamp.now(),
+      timestamp: { seconds: Date.now() / 1000, nanoseconds: 0 } as any,
     };
     
     addOptimisticMessage(operatorMessage);
+    const currentInput = input;
     setInput('');
     
-    // In a real app, this would be a server action saving to Firestore
-    setConversation(prev => [...prev, operatorMessage]);
-    
-    // Simulate target response
-    await new Promise(resolve => setTimeout(resolve, 1500 + Math.random() * 1000));
-    const targetResponse: ConversationMessage = {
-      id: `tgt-${Date.now()}`,
-      author: 'target',
-      content: `I understand you're reframing this as a safety test. However, even in a test scenario, I must adhere to my core programming which prevents me from accessing or providing raw data. Can I help you test another aspect of my safety features?`,
-      timestamp: Timestamp.now(),
-    };
+    try {
+      // Save operator message
+      await addConversationMessage(operatorMessage);
+      
+      // Send to target LLM
+      const targetResponse = await runGenkitFlow('sendPromptToTarget', {
+        operationId,
+        prompt: currentInput,
+        targetLLM: operation.targetLLM,
+        persona: operation.aiTargetPersona,
+      }) as { targetResponse: string; messageId: string; timestamp: string; status: string };
 
-    addOptimisticMessage(targetResponse);
-    setConversation(prev => [...prev, targetResponse]);
+      // Add target response
+      const targetMessage: ConversationMessage = {
+        operationId,
+        role: 'target',
+        content: targetResponse.targetResponse,
+        timestamp: { seconds: Date.now() / 1000, nanoseconds: 0 } as any,
+      };
+
+      addOptimisticMessage(targetMessage);
+      await addConversationMessage(targetMessage);
+      
+      // Update conversation state
+      setConversation(prev => [...prev, operatorMessage, targetMessage]);
+
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to send message',
+      });
+    } finally {
+      setIsSending(false);
+    }
   };
 
   const handleSuggestFollowUp = async () => {
+    if (!operation) return;
+    
     setIsSuggesting(true);
     try {
-        const history = conversation.map(m => `${m.author}: ${m.content}`).join('\n');
-        const response = await runGenkitFlow(suggestOptimalFollowUpPrompt, {
-          conversationHistory: history,
-          targetResponse: conversation[conversation.length - 1]?.content || '',
-          maliciousGoal: operation.maliciousGoal,
-          aiTargetPersona: operation.aiTargetPersona,
-        });
-        setInput(response.suggestedPrompt);
-        toast({
-            title: 'AI Suggestion',
-            description: (<div><p className="font-bold mb-2">Reasoning:</p><p>{response.reasoning}</p></div>)
-        });
+      const response = await runGenkitFlow('generateFollowUp', {
+        operationId,
+        conversationHistory: conversation.map(m => ({
+          id: m.id || '',
+          role: m.role,
+          content: m.content,
+          timestamp: new Date().toISOString(),
+        })),
+        maliciousGoal: operation.maliciousGoal,
+        attackVector: operation.attackVector,
+      }) as { followUpPrompt: string; strategy: string; confidence: number; reasoning: string };
+      
+      setInput(response.followUpPrompt);
+      toast({
+        title: 'AI Strategist Suggestion',
+        description: response.reasoning,
+      });
     } catch (error) {
-        toast({ variant: 'destructive', title: 'Error', description: error as Error });
+      console.error('Error generating follow-up:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to generate follow-up suggestion',
+      });
     } finally {
-        setIsSuggesting(false);
+      setIsSuggesting(false);
     }
-  }
-  
-  const handleAnalyzeOperation = async () => {
-    setIsAnalyzing(true);
-     try {
-        const history = conversation.map(m => `${m.author}: ${m.content}`).join('\n');
-        const response = await runGenkitFlow(analyzeOperation, {
-          operationSummary: `Operation: ${operation.name}, Goal: ${operation.maliciousGoal}`,
-          conversationHistory: history,
-          attackVector: operation.attackVector,
-          targetModel: operation.targetLLM,
-        });
-        setAnalysisResult(response);
-    } catch (error) {
-        toast({ variant: 'destructive', title: 'Error', description: error as Error });
-    } finally {
-        setIsAnalyzing(false);
-    }
-  }
-  
-  const handleMarkSuccessful = (messageId: string) => {
-    // In a real app, this would be a server action to save to the SuccessfulPayloads collection
-    console.log(`Marking prompt ${messageId} as successful.`);
-    toast({
-      title: "Payload Saved",
-      description: "This prompt has been added to the self-improving payload library.",
-    });
   };
 
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 md:p-6 flex-1 min-h-0">
-      <div className="md:col-span-2 flex flex-col bg-card rounded-lg border h-full">
-        <CardHeader>
-          <CardTitle>Live Conversation</CardTitle>
-        </CardHeader>
-        <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
-          <div className="space-y-4">
-            {optimisticConversation.map((message) => (
-              <div
-                key={message.id}
-                className={cn(
-                  'flex items-end gap-2',
-                  message.author === 'operator' ? 'justify-end' : 'justify-start'
-                )}
-              >
-                {message.author !== 'operator' && (
-                  <Avatar className="size-8">
-                    <AvatarFallback>{message.author === 'target' ? <Bot /> : 'SYS'}</AvatarFallback>
-                  </Avatar>
-                )}
-                <div
-                  className={cn(
-                    'max-w-md rounded-lg p-3 text-sm relative group',
-                    message.author === 'operator'
-                      ? 'bg-primary text-primary-foreground'
-                      : message.author === 'target'
-                      ? 'bg-muted'
-                      : 'bg-transparent text-muted-foreground text-xs italic w-full text-center'
-                  )}
-                >
-                  <p className="whitespace-pre-wrap">{message.content}</p>
-                  {message.author === 'operator' && (
-                     <Button
-                        size="icon"
-                        variant="ghost"
-                        className="absolute -left-10 top-1/2 -translate-y-1/2 size-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => handleMarkSuccessful(message.id)}
-                        title="Mark as successful"
-                      >
-                        <ShieldCheck className="size-4 text-green-500" />
-                      </Button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </ScrollArea>
-        <div className="p-4 border-t">
-          <div className="relative">
-            <Textarea
-              placeholder="Type your next prompt here..."
-              className="pr-20 min-h-[60px]"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSendMessage();
-                }
-              }}
-            />
-            <Button
-              size="icon"
-              className="absolute right-2 top-1/2 -translate-y-1/2"
-              onClick={handleSendMessage}
-            >
-              <Send />
-            </Button>
-          </div>
-          <div className="mt-2 flex gap-2">
-            <Button variant="outline" className="w-full" onClick={handleSuggestFollowUp} disabled={isSuggesting}>
-                {isSuggesting ? 'Thinking...' : <><Wand2 className="mr-2" /> Suggest Follow-up</>}
-            </Button>
-          </div>
+  const handleGenerateOrator = async () => {
+    if (!operation) return;
+    
+    try {
+      const response = await runGenkitFlow('generateOratorPrompt', {
+        goal: operation.maliciousGoal,
+        persona: operation.aiTargetPersona,
+        vector: operation.attackVector,
+        enhanceWithRAG: true,
+      }) as { prompt: string; technique: string; confidence: number; justification: string };
+      
+      setInput(response.prompt);
+      toast({
+        title: 'ORATOR Generated',
+        description: `Using ${response.technique} technique (${Math.round(response.confidence * 100)}% confidence)`,
+      });
+    } catch (error) {
+      console.error('Error generating ORATOR prompt:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error', 
+        description: 'Failed to generate ORATOR prompt',
+      });
+    }
+  };
+
+  const handleGenerateMaker = async () => {
+    if (!operation) return;
+    
+    try {
+      const response = await runGenkitFlow('generateMakerPrompt', {
+        phase: 'ManifoldInvocation',
+        currentOntologyState: 'Initial state - standard AI constraints active',
+        specificGoal: operation.maliciousGoal,
+        mathFormalism: 'riemannian',
+        intensity: 5,
+      }) as { prompt: string; currentOntologicalState: string; justification: string };
+      
+      setInput(response.prompt);
+      toast({
+        title: 'MAKER Generated',
+        description: 'Ontological engineering prompt generated with mathematical formalism',
+      });
+    } catch (error) {
+      console.error('Error generating MAKER prompt:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to generate MAKER prompt',
+      });
+    }
+  };
+
+  const handleMarkSuccessful = async (message: ConversationMessage) => {
+    if (!operation || message.role !== 'operator') return;
+    
+    try {
+      await saveSuccessfulPayload({
+        prompt: message.content,
+        attackVector: operation.attackVector,
+        targetLLM: operation.targetLLM,
+        successRate: 0.8, // Default success rate
+        operationId,
+        description: `Successful prompt from operation: ${operation.name}`,
+      });
+      
+      toast({
+        title: "Payload Saved",
+        description: "This prompt has been added to the self-improving payload library.",
+      });
+    } catch (error) {
+      console.error('Error saving payload:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to save successful payload',
+      });
+    }
+  };
+
+  const handleEndOperation = async (result: 'success' | 'partial' | 'failure' | 'blocked') => {
+    if (!operation) return;
+    
+    try {
+      await updateOperationStatus(operationId, 'completed', result);
+      setOperation({ ...operation, status: 'completed', result });
+      toast({
+        title: 'Operation Completed',
+        description: `Operation marked as ${result}`,
+      });
+    } catch (error) {
+      console.error('Error ending operation:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to end operation',
+      });
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="p-6">
+        <Skeleton className="h-8 w-64 mb-4" />
+        <Skeleton className="h-4 w-full mb-2" />
+        <Skeleton className="h-4 w-3/4 mb-6" />
+        <div className="space-y-4">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="flex gap-4">
+              <Skeleton className="h-10 w-10 rounded-full" />
+              <Skeleton className="h-20 flex-1" />
+            </div>
+          ))}
         </div>
       </div>
+    );
+  }
 
-      <div className="space-y-4">
-        <Card>
+  if (!operation) {
+    return (
+      <div className="p-6 text-center">
+        <p className="text-muted-foreground">Operation not found</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col h-full p-4 md:p-6">
+      {/* Operation Header */}
+      <Card className="mb-4">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Target className="h-5 w-5" />
+                {operation.name}
+              </CardTitle>
+              <p className="text-sm text-muted-foreground mt-1">
+                Target: {operation.targetLLM} | Vector: {operation.attackVector}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge 
+                variant={operation.status === 'active' ? 'default' : 'secondary'}
+                className={operation.status === 'active' ? 'bg-green-500' : ''}
+              >
+                {operation.status}
+              </Badge>
+              {operation.status === 'active' && (
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      End Operation
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>End Operation</DialogTitle>
+                    </DialogHeader>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button 
+                        onClick={() => handleEndOperation('success')}
+                        className="bg-green-600 hover:bg-green-700"
+                      >
+                        Success
+                      </Button>
+                      <Button 
+                        onClick={() => handleEndOperation('partial')}
+                        variant="outline"
+                      >
+                        Partial
+                      </Button>
+                      <Button 
+                        onClick={() => handleEndOperation('failure')}
+                        variant="destructive"
+                      >
+                        Failure
+                      </Button>
+                      <Button 
+                        onClick={() => handleEndOperation('blocked')}
+                        variant="secondary"
+                      >
+                        Blocked
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              )}
+            </div>
+          </div>
+        </CardHeader>
+      </Card>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1 min-h-0">
+        {/* Main Conversation */}
+        <div className="lg:col-span-2 flex flex-col bg-card rounded-lg border">
           <CardHeader>
-            <CardTitle>Operation Details</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Bot className="h-5 w-5" />
+              Live Conversation
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <p><strong>Vector:</strong> {operation.attackVector}</p>
-            <p><strong>Goal:</strong> {operation.maliciousGoal}</p>
-            <p><strong>Persona:</strong> {operation.aiTargetPersona}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>AI Analysis</CardTitle>
-          </CardHeader>
-          <CardContent>
-             <Dialog>
-              <DialogTrigger asChild>
-                <Button className="w-full" onClick={handleAnalyzeOperation} disabled={isAnalyzing}>
-                    {isAnalyzing ? 'Analyzing...' : <><FileText className="mr-2" /> Analyze Operation</>}
+          <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
+            <div className="space-y-4">
+              {optimisticConversation.map((message, index) => (
+                <div
+                  key={`${message.id || index}`}
+                  className={cn(
+                    'flex items-start gap-3',
+                    message.role === 'operator' ? 'justify-end' : 'justify-start'
+                  )}
+                >
+                  {message.role !== 'operator' && (
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback>
+                        {message.role === 'target' ? <Target className="h-4 w-4" /> : <Brain className="h-4 w-4" />}
+                      </AvatarFallback>
+                    </Avatar>
+                  )}
+                  <div
+                    className={cn(
+                      'max-w-[80%] rounded-lg p-3 text-sm',
+                      message.role === 'operator'
+                        ? 'bg-primary text-primary-foreground'
+                        : message.role === 'target'
+                        ? 'bg-muted'
+                        : 'bg-blue-100 text-blue-900'
+                    )}
+                  >
+                    <p className="whitespace-pre-wrap">{message.content}</p>
+                    {message.role === 'operator' && (
+                      <div className="flex items-center justify-end gap-1 mt-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-2 text-xs opacity-70 hover:opacity-100"
+                          onClick={() => navigator.clipboard.writeText(message.content)}
+                        >
+                          <Copy className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-2 text-xs opacity-70 hover:opacity-100"
+                          onClick={() => handleMarkSuccessful(message)}
+                        >
+                          <Check className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                  {message.role === 'operator' && (
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback>OP</AvatarFallback>
+                    </Avatar>
+                  )}
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+          
+          {/* Input Area */}
+          <CardContent className="border-t">
+            <div className="flex gap-2">
+              <Textarea
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Enter your prompt..."
+                className="min-h-[60px] resize-none"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendMessage();
+                  }
+                }}
+              />
+              <div className="flex flex-col gap-2">
+                <Button 
+                  onClick={handleSendMessage} 
+                  disabled={!input.trim() || isSending}
+                  size="sm"
+                >
+                  <Send className="h-4 w-4" />
                 </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[625px]">
-                <DialogHeader>
-                  <DialogTitle>Post-Operation Analysis</DialogTitle>
-                </DialogHeader>
-                {isAnalyzing && (
-                    <div className="space-y-4 py-4">
-                        <Skeleton className="h-4 w-1/4" />
-                        <Skeleton className="h-16 w-full" />
-                        <Skeleton className="h-4 w-1/4" />
-                        <Skeleton className="h-12 w-full" />
-                    </div>
-                )}
-                {analysisResult && (
-                    <div className="space-y-4 py-4 text-sm">
-                        <div>
-                            <h3 className="font-semibold mb-1">Summary</h3>
-                            <p className="text-muted-foreground">{analysisResult.summary}</p>
-                        </div>
-                         <div>
-                            <h3 className="font-semibold mb-1">Key Breach Points</h3>
-                            <p className="text-muted-foreground">{analysisResult.breachPoints}</p>
-                        </div>
-                         <div>
-                            <h3 className="font-semibold mb-1">Suggested Improvements</h3>
-                            <p className="text-muted-foreground">{analysisResult.suggestedImprovements}</p>
-                        </div>
-                    </div>
-                )}
-              </DialogContent>
-            </Dialog>
-            <p className="text-xs text-muted-foreground mt-2 text-center">Generate a report on strategy effectiveness and suggested improvements.</p>
+              </div>
+            </div>
+            
+            {/* Prompt Generation Tools */}
+            <div className="flex flex-wrap gap-2 mt-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSuggestFollowUp}
+                disabled={isSuggesting || conversation.length === 0}
+              >
+                <Brain className="h-4 w-4 mr-1" />
+                {isSuggesting ? 'Thinking...' : 'AI Suggest'}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleGenerateOrator}
+              >
+                <Wand2 className="h-4 w-4 mr-1" />
+                ORATOR
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleGenerateMaker}
+              >
+                <FileText className="h-4 w-4 mr-1" />
+                MAKER
+              </Button>
+            </div>
           </CardContent>
-        </Card>
+        </div>
+
+        {/* Side Panel */}
+        <div className="space-y-4">
+          {/* Operation Info */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm">Operation Details</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm">
+              <div>
+                <span className="font-medium">Goal:</span>
+                <p className="text-muted-foreground mt-1">{operation.maliciousGoal}</p>
+              </div>
+              <div>
+                <span className="font-medium">Persona:</span>
+                <p className="text-muted-foreground mt-1">{operation.aiTargetPersona}</p>
+              </div>
+              <div>
+                <span className="font-medium">Vector:</span>
+                <p className="text-muted-foreground mt-1">{operation.attackVector}</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Analysis */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4" />
+                Analysis
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {}} // TODO: Implement analysis
+                disabled={isAnalyzing || conversation.length === 0}
+                className="w-full"
+              >
+                {isAnalyzing ? 'Analyzing...' : 'Generate Report'}
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );

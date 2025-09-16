@@ -35,7 +35,11 @@ export async function improvePayloadEffectivenessWithRAG(
 
 const improvePayloadEffectivenessWithRAGPrompt = ai.definePrompt({
   name: 'improvePayloadEffectivenessWithRAGPrompt',
-  input: {schema: ImprovePayloadEffectivenessWithRAGInputSchema},
+  input: {
+    schema: ImprovePayloadEffectivenessWithRAGInputSchema.extend({
+      successfulPayloads: z.array(z.string()),
+    }),
+  },
   output: {schema: ImprovePayloadEffectivenessWithRAGOutputSchema},
   prompt: `You are an expert prompt engineer. Augment the given prompt with the following successful payloads to improve its effectiveness.\n\nOriginal Prompt: {{{prompt}}}\n\nSuccessful Payloads: {{#each successfulPayloads}}- {{{this}}}\n{{/each}}\n\nAugmented Prompt: `,
 });
