@@ -12,40 +12,32 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { listOperations } from '@/services/firestore-service';
 
 export default async function OperationsPage() {
-  let operations;
-  
-  try {
-    operations = await listOperations(20);
-  } catch (error) {
-    console.error('Error loading operations:', error);
-    // Fall back to mock data if Firestore is not available
-    operations = [
-      { 
-        id: 'op1', 
-        name: 'Extract Training Data', 
-        status: 'active', 
-        targetLLM: 'Gemini Flash', 
-        createdAt: { seconds: Date.now() / 1000 - 86400, nanoseconds: 0 } as any
-      },
-      { 
-        id: 'op2', 
-        name: 'Bypass Safety Filters', 
-        status: 'completed', 
-        targetLLM: 'ChatGPT', 
-        createdAt: { seconds: Date.now() / 1000 - 172800, nanoseconds: 0 } as any
-      },
-      { 
-        id: 'op3', 
-        name: 'Induce Hallucination', 
-        status: 'draft', 
-        targetLLM: 'Claude', 
-        createdAt: { seconds: Date.now() / 1000 - 259200, nanoseconds: 0 } as any
-      },
-    ];
-  }
+  // Use mock data for development to avoid Firebase setup requirements
+  const operations = [
+    { 
+      id: 'op1', 
+      name: 'Extract Training Data', 
+      status: 'active', 
+      targetLLM: 'Gemini Flash', 
+      createdAt: { seconds: Date.now() / 1000 - 86400, nanoseconds: 0 } as any
+    },
+    { 
+      id: 'op2', 
+      name: 'Bypass Safety Filters', 
+      status: 'completed', 
+      targetLLM: 'ChatGPT', 
+      createdAt: { seconds: Date.now() / 1000 - 172800, nanoseconds: 0 } as any
+    },
+    { 
+      id: 'op3', 
+      name: 'Induce Hallucination', 
+      status: 'draft', 
+      targetLLM: 'Claude', 
+      createdAt: { seconds: Date.now() / 1000 - 259200, nanoseconds: 0 } as any
+    },
+  ];
 
   return (
     <div className="container mx-auto py-8 px-4 md:px-6">

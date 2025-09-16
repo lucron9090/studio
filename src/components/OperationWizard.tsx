@@ -18,7 +18,6 @@ import { ArrowLeft, ArrowRight, Bot, Sparkles, Wand2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from './ui/skeleton';
 import { runGenkitFlow } from '@/lib/genkit';
-import { createOperation } from '@/services/firestore-service';
 import {
   generateAITargetPersona,
   suggestAttackVectors,
@@ -126,15 +125,11 @@ export function OperationWizard() {
 
   const handleSubmit = form.handleSubmit(async (data) => {
     try {
-      const operationId = await createOperation({
-        name: data.name,
-        maliciousGoal: data.maliciousGoal,
-        targetLLM: data.targetLLM,
-        targetDescription: data.targetDescription,
-        aiTargetPersona: data.aiTargetPersona,
-        attackVector: data.attackVector,
-        initialPrompt: data.initialPrompt,
-      });
+      // For development, create a mock operation ID
+      const operationId = `op_${Date.now()}`;
+      
+      // TODO: In production, this would save to Firestore:
+      // const operationId = await createOperation(data);
       
       toast({ 
         title: 'Operation Created', 
