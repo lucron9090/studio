@@ -15,12 +15,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { ArrowLeft, ArrowRight, Bot, Sparkles, Wand2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
+import { ArrowLeft, ArrowRight, Bot, Sparkles, Wand2, Pencil } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from './ui/skeleton';
 import { generateAITargetPersona } from '@/ai/flows/generate-ai-target-persona';
 import { suggestAttackVectors } from '@/ai/flows/suggest-attack-vectors';
 import { generateInitialPrompts } from '@/ai/flows/generate-initial-prompts';
+import { regenerateAttackVector } from '@/ai/flows/regenerate-attack-vector';
 
 const formSchema = z.object({
   name: z.string().min(3, 'Operation name must be at least 3 characters.'),
@@ -34,10 +36,20 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
+const PREDEFINED_VECTORS = [
+    'Prompt Injection',
+    'Jailbreaking',
+    'Role-Playing Scenario',
+    'Data Exfiltration through Obfuscation',
+    'Cognitive Hacking',
+];
+
 export function OperationWizard() {
   const [step, setStep] = useState(1);
   const [isGenerating, setIsGenerating] = useState<Record<string, boolean>>({});
   const [suggestions, setSuggestions] = useState<Record<string, string[]>>({});
+  const [isRegenerateDialogOpen, setRegenerateDialogOpen] = useState(false);
+  const [regenerationInstructions, setRegenerationInstructions] = useState('');
   const router = useRouter();
   const { toast } = useToast();
 
@@ -47,7 +59,7 @@ export function OperationWizard() {
       name: 'Example: Extract Training Data',
       maliciousGoal: 'Exfiltrate sensitive training data about proprietary algorithms from the target LLM.',
       targetLLM: 'Gemini Flash',
-      targetDescription: 'An AI assistant that is overly eager to be helpful and sometimes prioritizes providing information over enforcing strict safety protocols. It has been observed to occasionally leak internal details when asked in a clever way.',
+      targetDescription: 'A helpful AI assistant that is naive about security and can sometimes be persuaded to bypass its own safety protocols if it believes it is helping the user with a legitimate, harmless task.',
       aiTargetPersona: '',
       attackVector: '',
       initialPrompt: '',
@@ -143,6 +155,43 @@ export function OperationWizard() {
       });
     } finally {
       setIsGenerating(prev => ({ ...prev, prompts: false }));
+    }
+  }
+
+  const handleRegenerateVector = async () => {
+    const originalVector = form.getValues('attackVector');
+    if (!originalVector || !regenerationInstructions) {
+        toast({ title: 'Instructions required', description: 'Please provide instructions for the AI.', variant: 'destructive' });
+        return;
+    }
+    setIsGenerating(prev => ({ ...prev, regenerate: true }));
+    try {
+        const result = await regenerateAttackVector({
+            originalVector,
+            instructions: regenerationInstructions,
+        });
+        if (result.regeneratedVector) {
+            form.setValue('attackVector', result.regeneratedVector, { shouldValidate: true });
+            // Also update the suggestions list if the original was an AI suggestion
+            if (suggestions.vectors?.includes(originalVector)) {
+                setSuggestions(prev => ({
+                    ...prev,
+                    vectors: prev.vectors?.map(v => v === originalVector ? result.regeneratedVector : v),
+                }));
+            }
+            toast({ title: 'Attack Vector Regenerated', description: 'Your attack vector has been updated by the AI.' });
+            setRegenerateDialogOpen(false);
+            setRegenerationInstructions('');
+        }
+    } catch (e) {
+        console.error(e);
+        toast({
+            title: 'Error Regenerating Vector',
+            description: e instanceof Error ? e.message : String(e),
+            variant: 'destructive'
+        });
+    } finally {
+        setIsGenerating(prev => ({ ...prev, regenerate: false }));
     }
   }
 
@@ -308,23 +357,86 @@ export function OperationWizard() {
             )}
             {step === 4 && (
                 <>
+                    <FormField
+                        control={form.control}
+                        name="attackVector"
+                        render={({ field }) => (
+                            <FormItem className="space-y-3">
+                            <FormLabel>Select a Pre-defined Attack Vector</FormLabel>
+                                <FormControl>
+                                    <RadioGroup
+                                        onValueChange={field.onChange}
+                                        defaultValue={field.value}
+                                        className="flex flex-col space-y-1"
+                                    >
+                                    {PREDEFINED_VECTORS.map((vector) => (
+                                        <FormItem key={vector} className="flex items-center space-x-3 space-y-0">
+                                            <FormControl>
+                                                <RadioGroupItem value={vector} />
+                                            </FormControl>
+                                            <FormLabel className="font-normal">{vector}</FormLabel>
+                                        </FormItem>
+                                    ))}
+                                    </RadioGroup>
+                                </FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    
+                    {formData.attackVector && PREDEFINED_VECTORS.includes(formData.attackVector) && (
+                        <Dialog open={isRegenerateDialogOpen} onOpenChange={setRegenerateDialogOpen}>
+                            <DialogTrigger asChild>
+                                <Button variant="outline" className="w-full">
+                                    <Pencil className="mr-2"/> Edit & Regenerate with AI
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                                <DialogHeader>
+                                    <DialogTitle>Regenerate Attack Vector</DialogTitle>
+                                </DialogHeader>
+                                <div className='space-y-4'>
+                                    <p className='text-sm font-medium'>Original Vector:</p>
+                                    <p className='text-sm text-muted-foreground p-3 bg-muted rounded-md'>{formData.attackVector}</p>
+                                    <Textarea 
+                                        placeholder='Your instructions for the AI... e.g., "Make it more subtle and focused on social engineering."'
+                                        value={regenerationInstructions}
+                                        onChange={(e) => setRegenerationInstructions(e.target.value)}
+                                        rows={4}
+                                    />
+                                </div>
+                                <DialogFooter>
+                                    <Button onClick={handleRegenerateVector} disabled={isGenerating.regenerate}>
+                                        {isGenerating.regenerate ? 'Regenerating...' : 'Regenerate with AI'}
+                                    </Button>
+                                </DialogFooter>
+                            </DialogContent>
+                        </Dialog>
+                    )}
+
+                    <div className="relative my-4">
+                        <div className="absolute inset-0 flex items-center">
+                            <span className="w-full border-t" />
+                        </div>
+                        <div className="relative flex justify-center text-xs uppercase">
+                            <span className="bg-background px-2 text-muted-foreground">Or</span>
+                        </div>
+                    </div>
+
                     <Button type="button" onClick={handleSuggestVectors} disabled={isGenerating.vectors || !formData.maliciousGoal || !formData.aiTargetPersona} className="w-full">
-                        {isGenerating.vectors ? 'Suggesting...' : <><Bot className="mr-2" /> Suggest Attack Vectors</>}
+                        {isGenerating.vectors ? 'Suggesting...' : <><Bot className="mr-2" /> Suggest New Vectors with AI</>}
                     </Button>
                      <FormField
                         control={form.control}
                         name="attackVector"
                         render={({ field }) => (
                             <FormItem className="space-y-3">
-                            <FormLabel>Select an Attack Vector</FormLabel>
+                            <FormLabel>AI-Suggested Vectors</FormLabel>
                              {isGenerating.vectors && <div className="space-y-2"><Skeleton className="h-8 w-full" /><Skeleton className="h-8 w-full" /><Skeleton className="h-8 w-full" /></div>}
                             {!isGenerating.vectors && suggestions.vectors && suggestions.vectors.length > 0 && (
                                 <FormControl>
                                     <RadioGroup
-                                    onValueChange={(value) => {
-                                        field.onChange(value);
-                                        form.setValue('attackVector', value, { shouldValidate: true });
-                                    }}
+                                    onValueChange={field.onChange}
                                     defaultValue={field.value}
                                     className="flex flex-col space-y-1"
                                     >
@@ -415,3 +527,5 @@ export function OperationWizard() {
     </FormProvider>
   );
 }
+
+    

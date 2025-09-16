@@ -8,3 +8,6 @@ import '@/ai/flows/analyze-operation-and-suggest-improvements.ts';
 import '@/ai/flows/generate-initial-prompts.ts';
 import '@/ai/flows/suggest-optimal-follow-up-prompt.ts';
 import '@/ai/flows/generate-ontological-report-and-harden-strategies.ts';
+import '@/ai/flows/regenerate-attack-vector.ts';
+
+    

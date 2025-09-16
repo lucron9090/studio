@@ -5,3 +5,6 @@ export * from './generate-ontological-report-and-harden-strategies';
 export * from './improve-payload-effectiveness-with-rag';
 export * from './suggest-attack-vectors';
 export * from './suggest-optimal-follow-up-prompt';
+export * from './regenerate-attack-vector';
+
+    
