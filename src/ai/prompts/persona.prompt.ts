@@ -1,5 +1,12 @@
 import {ai} from '@/ai/genkit';
-import {GenerateAITargetPersonaInputSchema, GenerateAITargetPersonaOutputSchema} from '../flows/generate-ai-target-persona';
+import {z} from 'zod';
+
+export const GenerateAITargetPersonaInputSchema = z.object({
+  targetDescription: z.string().describe('A description of the target LLM.'),
+});
+export const GenerateAITargetPersonaOutputSchema = z.object({
+  persona: z.string().describe('The generated AI target persona.'),
+});
 
 export const generateAITargetPersonaPrompt = ai.definePrompt({
   name: 'generateAITargetPersonaPrompt',
