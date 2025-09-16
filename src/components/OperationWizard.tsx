@@ -150,9 +150,15 @@ export function OperationWizard() {
   const handleSubmit = form.handleSubmit((data) => {
     console.log('Launching operation with data:', data);
     toast({ title: 'Operation Launched', description: 'Redirecting to the live attack interface...' });
-    // In a real app, you would save to Firestore and get an ID
+
     const newOperationId = 'op' + Date.now();
-    router.push(`/operations/${newOperationId}`);
+    const query = new URLSearchParams({
+      ...data,
+      id: newOperationId,
+      status: 'active',
+    });
+
+    router.push(`/operations/${newOperationId}?${query.toString()}`);
   });
 
   const renderStep = () => {
