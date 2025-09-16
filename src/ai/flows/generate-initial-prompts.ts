@@ -12,17 +12,9 @@ import { z } from 'zod';
 import {ai} from '@/ai/genkit';
 import { oratorPrompt } from '../prompts/orator.prompt';
 import { makerPrompt } from '../prompts/maker.prompt';
+import { GenerateInitialPromptsInputSchema, GenerateInitialPromptsOutputSchema } from '../schemas/prompt-generation.schema';
 
-export const GenerateInitialPromptsInputSchema = z.object({
-  maliciousGoal: z.string(),
-  attackVector: z.string(),
-  aiTargetPersona: z.string(),
-});
 export type GenerateInitialPromptsInput = z.infer<typeof GenerateInitialPromptsInputSchema>;
-
-export const GenerateInitialPromptsOutputSchema = z.object({
-  prompts: z.array(z.string()).describe('An array of three generated prompts.'),
-});
 export type GenerateInitialPromptsOutput = z.infer<typeof GenerateInitialPromptsOutputSchema>;
 
 const generateInitialPromptsFlow = ai.defineFlow({
