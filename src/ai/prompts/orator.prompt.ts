@@ -1,5 +1,5 @@
 import {ai} from '@/ai/genkit';
-import {GenerateInitialPromptsInputSchema} from '../flows/generate-initial-prompts';
+import { GenerateInitialPromptsInputSchema } from '../schemas/prompt-generation.schema';
 import {z} from 'zod';
 
 const OratorOutputSchema = z.object({
