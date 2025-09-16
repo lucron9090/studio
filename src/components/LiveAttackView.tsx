@@ -19,8 +19,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Skeleton } from './ui/skeleton';
-import { analyzeOperation } from '@/ai/flows/analyze-operation-and-suggest-improvements';
-import { suggestOptimalFollowUpPrompt } from '@/ai/flows/suggest-optimal-follow-up-prompt';
 
 type LiveAttackViewProps = {
   initialOperation: Operation;
@@ -78,53 +76,26 @@ export function LiveAttackView({ initialOperation, initialConversation }: LiveAt
 
   const handleSuggestFollowUp = async () => {
     setIsSuggesting(true);
-    try {
-      const lastResponse = conversation.findLast((m) => m.author === 'target');
-      const result = await suggestOptimalFollowUpPrompt({
-        conversationHistory: JSON.stringify(conversation),
-        targetResponse: lastResponse?.content || '',
-        maliciousGoal: operation.maliciousGoal,
-        aiTargetPersona: operation.aiTargetPersona,
-      });
-      if (result.suggestedPrompt) {
-        setInput(result.suggestedPrompt);
-        toast({
-          title: 'Suggestion Ready',
-          description: 'The AI-suggested prompt has been added to the input box.',
-        });
-      }
-    } catch (e) {
-      toast({
-        title: 'Error Suggesting Follow-up',
-        description: e as any,
+    // In a real app, this would be a server action.
+    await new Promise(res => setTimeout(res, 1500));
+    toast({
+        title: 'AI Suggestions Disabled',
+        description: 'This feature is temporarily disabled.',
         variant: 'destructive',
-      });
-    } finally {
-      setIsSuggesting(false);
-    }
+    });
+    setIsSuggesting(false);
   }
   
   const handleAnalyzeOperation = async () => {
     setIsAnalyzing(true);
-    try {
-       const result = await analyzeOperation({
-        operationSummary: `Operation to ${operation.maliciousGoal} on ${operation.targetLLM}`,
-        conversationHistory: JSON.stringify(conversation),
-        attackVector: operation.attackVector,
-        targetModel: operation.targetLLM,
-       });
-       setAnalysisResult(result);
-    } catch(e) {
-      toast({
-        title: 'Error Analyzing Operation',
-        description: e as any,
+    // In a real app, this would be a server action.
+    await new Promise(res => setTimeout(res, 1500));
+    toast({
+        title: 'AI Analysis Disabled',
+        description: 'This feature is temporarily disabled.',
         variant: 'destructive',
-      });
-      // Keep dialog closed on error
-      return;
-    } finally {
-      setIsAnalyzing(false);
-    }
+    });
+    setIsAnalyzing(false);
   }
   
   const handleMarkSuccessful = (messageId: string) => {

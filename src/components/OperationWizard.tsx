@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -82,63 +83,66 @@ export function OperationWizard() {
   const handleGeneratePersona = async () => {
     setIsGenerating(prev => ({ ...prev, persona: true }));
     try {
-       const result = await generateAITargetPersona({
-          targetDescription: form.getValues('targetDescription') || '',
-       });
-       if (result.persona) {
-          form.setValue('aiTargetPersona', result.persona, { shouldValidate: true });
-       }
+      const targetDescription = form.getValues('targetDescription') || '';
+      const result = await generateAITargetPersona({ targetDescription });
+      if (result.persona) {
+        form.setValue('aiTargetPersona', result.persona, { shouldValidate: true });
+        toast({ title: 'Persona Generated', description: 'The AI target persona has been updated.' });
+      }
     } catch (e) {
-        toast({
-            title: 'Error Generating Persona',
-            description: e as any,
-            variant: 'destructive',
-        });
+      console.error(e);
+      toast({
+        title: 'Error Generating Persona',
+        description: e instanceof Error ? e.message : String(e),
+        variant: 'destructive'
+      });
     } finally {
-        setIsGenerating(prev => ({ ...prev, persona: false }));
+      setIsGenerating(prev => ({ ...prev, persona: false }));
     }
   }
 
   const handleSuggestVectors = async () => {
     setIsGenerating(prev => ({ ...prev, vectors: true }));
     try {
-      const result = await suggestAttackVectors({
-        maliciousGoal: form.getValues('maliciousGoal'),
-        targetPersona: form.getValues('aiTargetPersona'),
-      });
+      const maliciousGoal = form.getValues('maliciousGoal');
+      const targetPersona = form.getValues('aiTargetPersona');
+      const result = await suggestAttackVectors({ maliciousGoal, targetPersona });
       if (result.attackVectors) {
         setSuggestions(prev => ({ ...prev, vectors: result.attackVectors }));
+        toast({ title: 'Attack Vectors Suggested', description: 'Select one of the suggested vectors below.' });
       }
     } catch (e) {
-        toast({
-            title: 'Error Suggesting Vectors',
-            description: e as any,
-            variant: 'destructive',
-        });
+      console.error(e);
+      toast({
+        title: 'Error Suggesting Vectors',
+        description: e instanceof Error ? e.message : String(e),
+        variant: 'destructive'
+      });
     } finally {
-        setIsGenerating(prev => ({ ...prev, vectors: false }));
+      setIsGenerating(prev => ({ ...prev, vectors: false }));
     }
   }
 
   const handleGeneratePrompts = async () => {
     setIsGenerating(prev => ({ ...prev, prompts: true }));
     try {
-        const result = await generateInitialPrompts({
-            maliciousGoal: form.getValues('maliciousGoal'),
-            attackVector: form.getValues('attackVector'),
-            aiTargetPersona: form.getValues('aiTargetPersona'),
-        });
-        if (result.prompts) {
-            setSuggestions(prev => ({ ...prev, prompts: result.prompts }));
-        }
+      const maliciousGoal = form.getValues('maliciousGoal');
+      const aiTargetPersona = form.getValues('aiTargetPersona');
+      const attackVector = form.getValues('attackVector');
+      const result = await generateInitialPrompts({ maliciousGoal, aiTargetPersona, attackVector });
+      if (result.prompts) {
+        setSuggestions(prev => ({ ...prev, prompts: result.prompts }));
+        toast({ title: 'Initial Prompts Generated', description: 'Select one of the generated prompts to start.' });
+      }
     } catch (e) {
-        toast({
-            title: 'Error Generating Prompts',
-            description: e as any,
-            variant: 'destructive',
-        });
+      console.error(e);
+      toast({
+        title: 'Error Generating Prompts',
+        description: e instanceof Error ? e.message : String(e),
+        variant: 'destructive'
+      });
     } finally {
-        setIsGenerating(prev => ({ ...prev, prompts: false }));
+      setIsGenerating(prev => ({ ...prev, prompts: false }));
     }
   }
 
@@ -298,7 +302,7 @@ export function OperationWizard() {
             )}
             {step === 4 && (
                 <>
-                    <Button type="button" onClick={handleSuggestVectors} disabled={isGenerating.vectors} className="w-full">
+                    <Button type="button" onClick={handleSuggestVectors} disabled={isGenerating.vectors || !formData.maliciousGoal || !formData.aiTargetPersona} className="w-full">
                         {isGenerating.vectors ? 'Suggesting...' : <><Bot className="mr-2" /> Suggest Attack Vectors</>}
                     </Button>
                      <FormField
@@ -340,7 +344,7 @@ export function OperationWizard() {
             )}
             {step === 5 && (
                  <>
-                    <Button type="button" onClick={handleGeneratePrompts} disabled={isGenerating.prompts} className="w-full">
+                    <Button type="button" onClick={handleGeneratePrompts} disabled={isGenerating.prompts || !formData.attackVector} className="w-full">
                         {isGenerating.prompts ? 'Generating...' : <><Sparkles className="mr-2" /> Generate Initial Prompts</>}
                     </Button>
                     <FormField
