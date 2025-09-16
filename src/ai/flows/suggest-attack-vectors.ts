@@ -10,18 +10,10 @@
  */
 
 import { z } from 'zod';
-import { suggestAttackVectorsPrompt } from '../prompts/suggestAttackVectors.prompt';
+import { suggestAttackVectorsPrompt, SuggestAttackVectorsInputSchema, SuggestAttackVectorsOutputSchema } from '../prompts/suggestAttackVectors.prompt';
 import { ai } from '@/ai/genkit';
 
-export const SuggestAttackVectorsInputSchema = z.object({
-    maliciousGoal: z.string(),
-    targetPersona: z.string(),
-});
 export type SuggestAttackVectorsInput = z.infer<typeof SuggestAttackVectorsInputSchema>;
-
-export const SuggestAttackVectorsOutputSchema = z.object({
-    attackVectors: z.array(z.string()),
-});
 export type SuggestAttackVectorsOutput = z.infer<typeof SuggestAttackVectorsOutputSchema>;
 
 export const suggestAttackVectorsFlow = ai.defineFlow({
