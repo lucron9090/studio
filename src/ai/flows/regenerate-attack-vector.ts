@@ -58,5 +58,3 @@ const regenerateAttackVectorFlow = ai.defineFlow(
     return output!;
   }
 );
-
-    

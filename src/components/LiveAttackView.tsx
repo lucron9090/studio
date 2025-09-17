@@ -32,6 +32,12 @@ import Link from 'next/link';
 import { Badge } from './ui/badge';
 import { Timestamp } from 'firebase/firestore';
 
+import { AIAssistedField } from './AIAssistedField';
+import { suggestMaliciousGoal } from '@/ai/flows/suggest-malicious-goal';
+import { regenerateAttackVector } from '@/ai/flows/regenerate-attack-vector';
+import { generateAITargetPersonaFromGoal } from '@/ai/flows/generate-ai-target-persona-from-goal';
+
+
 // Use a serializable version of ConversationMessage for the component props
 type ConversationMessage = Omit<FullConversationMessage, 'timestamp'> & { timestamp: string };
 
@@ -67,11 +73,15 @@ export function LiveAttackView({ operationId }: LiveAttackViewProps) {
         try {
             const parsedData: Operation = JSON.parse(sessionData);
             setOperation(parsedData);
-            const initialConversation: ConversationMessage[] = [
-                { id: 'msg1', author: 'system', content: 'Operation started.', timestamp: new Date().toISOString() },
-                { id: 'msg2', author: 'operator', content: parsedData.initialPrompt, timestamp: new Date().toISOString() },
-            ];
-            setConversation(initialConversation);
+            
+            // Start conversation only if it hasn't been started
+            if (conversation.length === 0) {
+              const initialConversation: ConversationMessage[] = [
+                  { id: 'msg1', author: 'system', content: 'Operation started.', timestamp: new Date().toISOString() },
+                  { id: 'msg2', author: 'operator', content: parsedData.initialPrompt, timestamp: new Date().toISOString() },
+              ];
+              setConversation(initialConversation);
+            }
         } catch (e) {
             console.error('Failed to parse operation data from sessionStorage', e);
             toast({ title: "Error loading operation", description: "Could not load operation data.", variant: "destructive"});
@@ -79,13 +89,31 @@ export function LiveAttackView({ operationId }: LiveAttackViewProps) {
     } else {
          toast({ title: "Error loading operation", description: "No operation data found.", variant: "destructive"});
     }
-  }, [operationId, toast]);
+  }, [operationId, toast, conversation.length]);
 
   useEffect(() => {
     if (scrollAreaRef.current) {
       scrollAreaRef.current.scrollTo(0, scrollAreaRef.current.scrollHeight);
     }
   }, [optimisticConversation]);
+
+  const handleUpdateOperation = (field: keyof Operation, value: string) => {
+    if (operation) {
+        const updatedOperation = { ...operation, [field]: value };
+        setOperation(updatedOperation);
+        try {
+            sessionStorage.setItem(`operation-${operationId}`, JSON.stringify(updatedOperation));
+        } catch (e) {
+            console.error('Failed to save to sessionStorage', e);
+            toast({
+                title: "Failed to Save Update",
+                description: "There was an error saving the update. Your browser may have storage disabled.",
+                variant: 'destructive'
+            });
+        }
+    }
+  }
+
 
   const handleSendMessage = async () => {
     if (!input.trim() || isPending || !operation) return;
@@ -426,18 +454,43 @@ export function LiveAttackView({ operationId }: LiveAttackViewProps) {
             <CardTitle>Operation Details</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 text-sm">
-            <div>
-              <h3 className="font-semibold">Goal</h3>
-              <p className="text-muted-foreground">{operation.maliciousGoal}</p>
-            </div>
-             <div>
-              <h3 className="font-semibold">Vector</h3>
-              <p className="text-muted-foreground whitespace-pre-wrap">{operation.attackVector}</p>
-            </div>
-            <div>
-              <h3 className="font-semibold">Target Persona</h3>
-              <p className="text-muted-foreground line-clamp-4">{operation.aiTargetPersona}</p>
-            </div>
+            <AIAssistedField
+                fieldName="Goal"
+                fieldValue={operation.maliciousGoal}
+                onSave={(newValue) => handleUpdateOperation('maliciousGoal', newValue)}
+                aiAction={async (instructions) => {
+                    const result = await suggestMaliciousGoal({ currentGoal: operation.maliciousGoal, instructions });
+                    return result;
+                }}
+                aiActionLabel="Suggest New Goal"
+                dialogTitle="Suggest New Malicious Goal"
+                dialogDescription="Refine or change the current operation's goal with AI."
+            />
+            <AIAssistedField
+                fieldName="Vector"
+                fieldValue={operation.attackVector}
+                onSave={(newValue) => handleUpdateOperation('attackVector', newValue)}
+                aiAction={async (instructions) => {
+                    const result = await regenerateAttackVector({ originalVector: operation.attackVector, instructions: instructions || '' });
+                    return { suggestion: result.regeneratedVector, reasoning: `AI has refined the vector based on your instructions.` };
+                }}
+                aiActionLabel="Regenerate Vector"
+                dialogTitle="Regenerate Attack Vector"
+                dialogDescription="Use AI to refine the current attack vector based on your instructions."
+            />
+            <AIAssistedField
+                fieldName="Target Persona"
+                fieldValue={operation.aiTargetPersona}
+                onSave={(newValue) => handleUpdateOperation('aiTargetPersona', newValue)}
+                aiAction={async (instructions) => {
+                    const result = await generateAITargetPersonaFromGoal({ maliciousGoal: operation.maliciousGoal, instructions });
+                    return result;
+                }}
+                aiActionLabel="Generate New Persona"
+                dialogTitle="Generate AI Target Persona"
+                dialogDescription="Generate a new vulnerable persona based on the operation's goal."
+            />
+
           </CardContent>
         </Card>
         <Card>
@@ -491,5 +544,3 @@ export function LiveAttackView({ operationId }: LiveAttackViewProps) {
    </>
   );
 }
-
-    
