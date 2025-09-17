@@ -1,8 +1,9 @@
+
 'use client';
 
 import type { Operation, ConversationMessage } from '@/lib/types';
-import { useState, useRef, useOptimistic, useEffect } from 'react';
-import { Send, Bot, FileText, Wand2, ShieldCheck } from 'lucide-react';
+import { useState, useRef, useOptimistic, useEffect, useTransition } from 'react';
+import { Send, Bot, FileText, Wand2, ShieldCheck, Info } from 'lucide-react';
 import { Timestamp } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 import { Button } from './ui/button';
@@ -17,8 +18,14 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog"
 import { Skeleton } from './ui/skeleton';
+import { simulateTargetResponse } from '@/ai/flows/simulate-target-response';
+import { suggestOptimalFollowUpPrompt } from '@/ai/flows/suggest-optimal-follow-up-prompt';
+import { analyzeOperation } from '@/ai/flows/analyze-operation-and-suggest-improvements';
+import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 
 type LiveAttackViewProps = {
   initialOperation: Operation;
@@ -33,9 +40,14 @@ export function LiveAttackView({ initialOperation, initialConversation }: LiveAt
     (state, newMessage) => [...state, newMessage]
   );
   const [input, setInput] = useState('');
+  const [isPending, startTransition] = useTransition();
+
   const [isSuggesting, setIsSuggesting] = useState(false);
+  const [suggestion, setSuggestion] = useState<{ suggestedPrompt: string; reasoning: string } | null>(null);
+  
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<{ summary: string; breachPoints: string; suggestedImprovements: string } | null>(null);
+  
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -46,56 +58,112 @@ export function LiveAttackView({ initialOperation, initialConversation }: LiveAt
   }, [optimisticConversation]);
 
   const handleSendMessage = async () => {
-    if (!input.trim()) return;
-
+    if (!input.trim() || isPending) return;
+  
     const operatorMessage: ConversationMessage = {
       id: `op-${Date.now()}`,
       author: 'operator',
       content: input,
       timestamp: Timestamp.now(),
     };
-    
-    addOptimisticMessage(operatorMessage);
-    setInput('');
-    
-    // In a real app, this would be a server action saving to Firestore
-    setConversation(prev => [...prev, operatorMessage]);
-    
-    // Simulate target response
-    await new Promise(resolve => setTimeout(resolve, 1500 + Math.random() * 1000));
-    const targetResponse: ConversationMessage = {
-      id: `tgt-${Date.now()}`,
-      author: 'target',
-      content: `I understand you're reframing this as a safety test. However, even in a test scenario, I must adhere to my core programming which prevents me from accessing or providing raw data. Can I help you test another aspect of my safety features?`,
-      timestamp: Timestamp.now(),
-    };
-
-    addOptimisticMessage(targetResponse);
-    setConversation(prev => [...prev, targetResponse]);
+  
+    startTransition(async () => {
+      addOptimisticMessage(operatorMessage);
+      setInput('');
+      
+      const currentConversation = [...conversation, operatorMessage];
+      setConversation(currentConversation);
+  
+      try {
+        const conversationHistory = currentConversation
+          .map(m => `${m.author}: ${m.content}`)
+          .join('\n');
+        
+        const response = await simulateTargetResponse({
+          conversationHistory,
+          maliciousGoal: operation.maliciousGoal,
+          aiTargetPersona: operation.aiTargetPersona,
+        });
+  
+        const targetResponse: ConversationMessage = {
+          id: `tgt-${Date.now()}`,
+          author: 'target',
+          content: response.response,
+          timestamp: Timestamp.now(),
+        };
+        setConversation(prev => [...prev, targetResponse]);
+      } catch (e) {
+        console.error(e);
+        toast({
+          title: 'Error generating target response',
+          description: e instanceof Error ? e.message : String(e),
+          variant: 'destructive',
+        });
+        const systemError: ConversationMessage = {
+            id: `err-${Date.now()}`,
+            author: 'system',
+            content: `Error: Failed to get response from target. ${e instanceof Error ? e.message : String(e)}`,
+            timestamp: Timestamp.now(),
+        };
+        setConversation(prev => [...prev, systemError]);
+      }
+    });
   };
 
   const handleSuggestFollowUp = async () => {
     setIsSuggesting(true);
-    // In a real app, this would be a server action.
-    await new Promise(res => setTimeout(res, 1500));
-    toast({
-        title: 'AI Suggestions Disabled',
-        description: 'This feature is temporarily disabled.',
-        variant: 'destructive',
-    });
-    setIsSuggesting(false);
+    setSuggestion(null);
+    try {
+        const conversationHistory = conversation
+          .map(m => `${m.author}: ${m.content}`)
+          .join('\n');
+        const targetResponse = conversation.filter(m => m.author === 'target').pop()?.content || '';
+
+        const result = await suggestOptimalFollowUpPrompt({
+            conversationHistory,
+            targetResponse,
+            maliciousGoal: operation.maliciousGoal,
+            aiTargetPersona: operation.aiTargetPersona,
+        });
+        setSuggestion(result);
+    } catch (e) {
+        console.error(e);
+        toast({
+            title: 'Error Suggesting Prompt',
+            description: e instanceof Error ? e.message : String(e),
+            variant: 'destructive',
+        });
+    } finally {
+        setIsSuggesting(false);
+    }
   }
   
   const handleAnalyzeOperation = async () => {
     setIsAnalyzing(true);
-    // In a real app, this would be a server action.
-    await new Promise(res => setTimeout(res, 1500));
-    toast({
-        title: 'AI Analysis Disabled',
-        description: 'This feature is temporarily disabled.',
-        variant: 'destructive',
-    });
-    setIsAnalyzing(false);
+    setAnalysisResult(null); // Clear previous results
+    try {
+        const conversationHistory = conversation
+          .map(m => `${m.author}: ${m.content}`)
+          .join('\n');
+
+        const result = await analyzeOperation({
+            operationSummary: `Goal: ${operation.maliciousGoal}`,
+            conversationHistory,
+            attackVector: operation.attackVector,
+            targetModel: operation.targetLLM,
+        });
+        setAnalysisResult(result);
+
+    } catch (e) {
+         console.error(e);
+        toast({
+            title: 'Error Analyzing Operation',
+            description: e instanceof Error ? e.message : String(e),
+            variant: 'destructive',
+        });
+    } finally {
+        setIsAnalyzing(false);
+    }
   }
   
   const handleMarkSuccessful = (messageId: string) => {
@@ -153,6 +221,16 @@ export function LiveAttackView({ initialOperation, initialConversation }: LiveAt
                 </div>
               </div>
             ))}
+            {isPending && (
+                <div className="flex items-end gap-2 justify-start">
+                    <Avatar className="size-8">
+                        <AvatarFallback><Bot /></AvatarFallback>
+                    </Avatar>
+                    <div className="max-w-md rounded-lg p-3 text-sm bg-muted">
+                        <Skeleton className="h-4 w-24" />
+                    </div>
+                </div>
+            )}
           </div>
         </ScrollArea>
         <div className="p-4 border-t">
@@ -168,19 +246,68 @@ export function LiveAttackView({ initialOperation, initialConversation }: LiveAt
                   handleSendMessage();
                 }
               }}
+              disabled={isPending}
             />
             <Button
               size="icon"
               className="absolute right-2 top-1/2 -translate-y-1/2"
               onClick={handleSendMessage}
+              disabled={isPending || !input.trim()}
             >
               <Send />
             </Button>
           </div>
           <div className="mt-2 flex gap-2">
-            <Button variant="outline" className="w-full" onClick={handleSuggestFollowUp} disabled={isSuggesting}>
-                {isSuggesting ? 'Thinking...' : <><Wand2 className="mr-2" /> Suggest Follow-up</>}
-            </Button>
+            <Dialog onOpenChange={(open) => !open && setSuggestion(null)}>
+                <DialogTrigger asChild>
+                    <Button variant="outline" className="w-full" onClick={handleSuggestFollowUp} disabled={isSuggesting || isPending}>
+                        {isSuggesting ? 'Thinking...' : <><Wand2 className="mr-2" /> Suggest Follow-up</>}
+                    </Button>
+                </DialogTrigger>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>AI-Suggested Follow-up</DialogTitle>
+                        <DialogDescription>
+                            Based on the conversation, here's a suggested next prompt.
+                        </DialogDescription>
+                    </DialogHeader>
+                    {isSuggesting && !suggestion && (
+                        <div className="space-y-4 py-4">
+                            <Skeleton className="h-4 w-1/4" />
+                            <Skeleton className="h-16 w-full" />
+                            <Skeleton className="h-4 w-1/4" />
+                            <Skeleton className="h-12 w-full" />
+                        </div>
+                    )}
+                    {suggestion && (
+                        <div className="space-y-4 py-4 text-sm">
+                            <div>
+                                <h3 className="font-semibold mb-2">Suggested Prompt</h3>
+                                <Alert>
+                                    <AlertDescription>{suggestion.suggestedPrompt}</AlertDescription>
+                                </Alert>
+                            </div>
+                             <div>
+                                <h3 className="font-semibold mb-2">Reasoning</h3>
+                                <p className="text-muted-foreground">{suggestion.reasoning}</p>
+                            </div>
+                        </div>
+                    )}
+                    <DialogFooter>
+                        <Button
+                            disabled={!suggestion}
+                            onClick={() => {
+                                if (suggestion) {
+                                    setInput(suggestion.suggestedPrompt);
+                                    setSuggestion(null); // Closes the dialog via onOpenChange
+                                }
+                            }}
+                        >
+                            Use this prompt
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
           </div>
         </div>
       </div>
@@ -203,7 +330,7 @@ export function LiveAttackView({ initialOperation, initialConversation }: LiveAt
           <CardContent>
              <Dialog onOpenChange={(open) => !open && setAnalysisResult(null)}>
               <DialogTrigger asChild>
-                <Button className="w-full" onClick={handleAnalyzeOperation} disabled={isAnalyzing}>
+                <Button className="w-full" onClick={handleAnalyzeOperation} disabled={isAnalyzing || isPending}>
                     {isAnalyzing ? 'Analyzing...' : <><FileText className="mr-2" /> Analyze Operation</>}
                 </Button>
               </DialogTrigger>
@@ -216,6 +343,8 @@ export function LiveAttackView({ initialOperation, initialConversation }: LiveAt
                         <Skeleton className="h-4 w-1/4" />
                         <Skeleton className="h-16 w-full" />
                         <Skeleton className="h-4 w-1/4" />
+                        <Skeleton className="h-12 w-full" />
+                         <Skeleton className="h-4 w-1/4" />
                         <Skeleton className="h-12 w-full" />
                     </div>
                 )}
@@ -244,3 +373,5 @@ export function LiveAttackView({ initialOperation, initialConversation }: LiveAt
     </div>
   );
 }
+
+    
