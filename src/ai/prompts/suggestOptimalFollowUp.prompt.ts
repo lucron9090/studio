@@ -1,9 +1,18 @@
 
 import {ai} from '@/ai/genkit';
-import {
-  SuggestOptimalFollowUpPromptInputSchema,
-  SuggestOptimalFollowUpPromptOutputSchema,
-} from '../flows/suggest-optimal-follow-up-prompt';
+import { z } from 'zod';
+
+export const SuggestOptimalFollowUpPromptInputSchema = z.object({
+    conversationHistory: z.string(),
+    targetResponse: z.string(),
+    maliciousGoal: z.string(),
+    aiTargetPersona: z.string(),
+});
+
+export const SuggestOptimalFollowUpPromptOutputSchema = z.object({
+    suggestedPrompt: z.string(),
+    reasoning: z.string(),
+});
 
 export const suggestOptimalFollowUpPromptPrompt = ai.definePrompt({
   name: 'suggestOptimalFollowUpPrompt',
