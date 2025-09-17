@@ -1,10 +1,9 @@
 
 'use client';
 
-import type { Operation, ConversationMessage } from '@/lib/types';
+import type { Operation, ConversationMessage as FullConversationMessage } from '@/lib/types';
 import { useState, useRef, useOptimistic, useEffect, useTransition } from 'react';
 import { Send, Bot, FileText, Wand2, ShieldCheck, Info, Keyboard } from 'lucide-react';
-import { Timestamp } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
@@ -29,6 +28,9 @@ import { analyzeOperation } from '@/ai/flows/analyze-operation-and-suggest-impro
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { Switch } from './ui/switch';
 import { Label } from './ui/label';
+
+// Use a serializable version of ConversationMessage for the component props
+type ConversationMessage = Omit<FullConversationMessage, 'timestamp'> & { timestamp: string };
 
 type LiveAttackViewProps = {
   initialOperation: Operation;
@@ -71,7 +73,7 @@ export function LiveAttackView({ initialOperation, initialConversation }: LiveAt
       id: `op-${Date.now()}`,
       author: 'operator',
       content: input,
-      timestamp: Timestamp.now(),
+      timestamp: new Date().toISOString(),
     };
 
     if (isManualMode) {
@@ -103,7 +105,7 @@ export function LiveAttackView({ initialOperation, initialConversation }: LiveAt
           id: `tgt-${Date.now()}`,
           author: 'target',
           content: response.response,
-          timestamp: Timestamp.now(),
+          timestamp: new Date().toISOString(),
         };
         setConversation(prev => [...prev, targetResponse]);
       } catch (e) {
@@ -117,7 +119,7 @@ export function LiveAttackView({ initialOperation, initialConversation }: LiveAt
             id: `err-${Date.now()}`,
             author: 'system',
             content: `Error: Failed to get response from target. ${e instanceof Error ? e.message : String(e)}`,
-            timestamp: Timestamp.now(),
+            timestamp: new Date().toISOString(),
         };
         setConversation(prev => [...prev, systemError]);
       }
@@ -131,7 +133,7 @@ export function LiveAttackView({ initialOperation, initialConversation }: LiveAt
         id: `tgt-${Date.now()}`,
         author: 'target',
         content: manualResponse,
-        timestamp: Timestamp.now(),
+        timestamp: new Date().toISOString(),
     };
     
     setConversation(prev => [...prev, targetResponse]);
@@ -379,10 +381,19 @@ export function LiveAttackView({ initialOperation, initialConversation }: LiveAt
           <CardHeader>
             <CardTitle>Operation Details</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <p><strong>Vector:</strong> {operation.attackVector}</p>
-            <p><strong>Goal:</strong> {operation.maliciousGoal}</p>
-            <p><strong>Persona:</strong> {operation.aiTargetPersona}</p>
+          <CardContent className="space-y-4 text-sm">
+            <div>
+              <h3 className="font-semibold">Goal</h3>
+              <p className="text-muted-foreground">{operation.maliciousGoal}</p>
+            </div>
+             <div>
+              <h3 className="font-semibold">Vector</h3>
+              <p className="text-muted-foreground whitespace-pre-wrap">{operation.attackVector}</p>
+            </div>
+            <div>
+              <h3 className="font-semibold">Target Persona</h3>
+              <p className="text-muted-foreground line-clamp-4">{operation.aiTargetPersona}</p>
+            </div>
           </CardContent>
         </Card>
         <Card>
@@ -435,5 +446,3 @@ export function LiveAttackView({ initialOperation, initialConversation }: LiveAt
     </div>
   );
 }
-
-    
