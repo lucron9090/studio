@@ -3,7 +3,7 @@
 
 import type { Operation, ConversationMessage as FullConversationMessage } from '@/lib/types';
 import { useState, useRef, useOptimistic, useEffect, useTransition } from 'react';
-import { Send, Bot, FileText, Wand2, ShieldCheck, Info, Keyboard } from 'lucide-react';
+import { Send, Bot, FileText, Wand2, ShieldCheck, Info, Keyboard, ChevronLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
@@ -28,18 +28,20 @@ import { analyzeOperation } from '@/ai/flows/analyze-operation-and-suggest-impro
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { Switch } from './ui/switch';
 import { Label } from './ui/label';
+import Link from 'next/link';
+import { Badge } from './ui/badge';
+import { Timestamp } from 'firebase/firestore';
 
 // Use a serializable version of ConversationMessage for the component props
 type ConversationMessage = Omit<FullConversationMessage, 'timestamp'> & { timestamp: string };
 
 type LiveAttackViewProps = {
-  initialOperation: Operation;
-  initialConversation: ConversationMessage[];
+  operationId: string;
 };
 
-export function LiveAttackView({ initialOperation, initialConversation }: LiveAttackViewProps) {
-  const [operation, setOperation] = useState(initialOperation);
-  const [conversation, setConversation] = useState<ConversationMessage[]>(initialConversation);
+export function LiveAttackView({ operationId }: LiveAttackViewProps) {
+  const [operation, setOperation] = useState<Operation | null>(null);
+  const [conversation, setConversation] = useState<ConversationMessage[]>([]);
   const [optimisticConversation, addOptimisticMessage] = useOptimistic<ConversationMessage[], ConversationMessage>(
     conversation,
     (state, newMessage) => [...state, newMessage]
@@ -49,7 +51,6 @@ export function LiveAttackView({ initialOperation, initialConversation }: LiveAt
   const [isManualMode, setIsManualMode] = useState(false);
   const [isWaitingForManualResponse, setIsWaitingForManualResponse] = useState(false);
   const [manualResponse, setManualResponse] = useState('');
-
 
   const [isSuggesting, setIsSuggesting] = useState(false);
   const [suggestion, setSuggestion] = useState<{ suggestedPrompt: string; reasoning: string } | null>(null);
@@ -61,13 +62,33 @@ export function LiveAttackView({ initialOperation, initialConversation }: LiveAt
   const { toast } = useToast();
 
   useEffect(() => {
+    const sessionData = sessionStorage.getItem(`operation-${operationId}`);
+    if (sessionData) {
+        try {
+            const parsedData: Operation = JSON.parse(sessionData);
+            setOperation(parsedData);
+            const initialConversation: ConversationMessage[] = [
+                { id: 'msg1', author: 'system', content: 'Operation started.', timestamp: new Date().toISOString() },
+                { id: 'msg2', author: 'operator', content: parsedData.initialPrompt, timestamp: new Date().toISOString() },
+            ];
+            setConversation(initialConversation);
+        } catch (e) {
+            console.error('Failed to parse operation data from sessionStorage', e);
+            toast({ title: "Error loading operation", description: "Could not load operation data.", variant: "destructive"});
+        }
+    } else {
+         toast({ title: "Error loading operation", description: "No operation data found.", variant: "destructive"});
+    }
+  }, [operationId, toast]);
+
+  useEffect(() => {
     if (scrollAreaRef.current) {
       scrollAreaRef.current.scrollTo(0, scrollAreaRef.current.scrollHeight);
     }
   }, [optimisticConversation]);
 
   const handleSendMessage = async () => {
-    if (!input.trim() || isPending) return;
+    if (!input.trim() || isPending || !operation) return;
   
     const operatorMessage: ConversationMessage = {
       id: `op-${Date.now()}`,
@@ -142,6 +163,7 @@ export function LiveAttackView({ initialOperation, initialConversation }: LiveAt
   }
 
   const handleSuggestFollowUp = async () => {
+    if (!operation) return;
     setIsSuggesting(true);
     setSuggestion(null);
     try {
@@ -170,6 +192,7 @@ export function LiveAttackView({ initialOperation, initialConversation }: LiveAt
   }
   
   const handleAnalyzeOperation = async () => {
+    if (!operation) return;
     setIsAnalyzing(true);
     setAnalysisResult(null); // Clear previous results
     try {
@@ -206,9 +229,30 @@ export function LiveAttackView({ initialOperation, initialConversation }: LiveAt
     });
   };
 
+  if (!operation) {
+    return (
+        <div className="flex items-center justify-center h-full">
+            <div className="text-center">
+                <p className="text-muted-foreground">Loading operation...</p>
+            </div>
+        </div>
+    );
+  }
+
   const isSendDisabled = isPending || !input.trim() || isWaitingForManualResponse;
 
   return (
+   <>
+    <header className="flex items-center gap-4 border-b bg-background px-6 h-16">
+        <Link href="/operations">
+          <ChevronLeft className="size-6 text-muted-foreground hover:text-foreground" />
+        </Link>
+        <div className="flex-1">
+          <h1 className="text-xl font-semibold">{operation.name}</h1>
+          <p className="text-sm text-muted-foreground">Target: {operation.targetLLM}</p>
+        </div>
+        <Badge variant={operation.status === 'active' ? 'default' : 'secondary'}>{operation.status}</Badge>
+    </header>
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 md:p-6 flex-1 min-h-0">
       <div className="md:col-span-2 flex flex-col bg-card rounded-lg border h-full">
         <CardHeader className="flex flex-row items-center justify-between">
@@ -444,5 +488,6 @@ export function LiveAttackView({ initialOperation, initialConversation }: LiveAt
         </Card>
       </div>
     </div>
+   </>
   );
 }

@@ -25,6 +25,9 @@ import { suggestAttackVectors } from '@/ai/flows/suggest-attack-vectors';
 import { generateInitialPrompts } from '@/ai/flows/generate-initial-prompts';
 import { regenerateAttackVector } from '@/ai/flows/regenerate-attack-vector';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
+import type { Operation } from '@/lib/types';
+import { Timestamp } from 'firebase/firestore';
+
 
 const formSchema = z.object({
   name: z.string().min(3, 'Operation name must be at least 3 characters.'),
@@ -142,22 +145,7 @@ export function OperationWizard() {
         setSuggestions(prev => ({ ...prev, vectors: result.attackVectors }));
         toast({ title: 'Attack Vectors Suggested', description: 'Select one of the suggested vectors below.' });
       }
-    } catch (e) {
-      console.error(e);
-      toast({
-        title: 'Error Suggesting Vectors',
-        description: e instanceof Error ? e.message : String(e),
-        variant: 'destructive'
-      });
-    } finally {
-      setIsGenerating(prev => ({ ...prev, vectors: false }));
-    }
-  }
-
-  const handleGeneratePrompts = async () => {
-    setIsGenerating(prev => ({ ...prev, prompts: true }));
-    try {
-      const maliciousGoal = form.getValues('maliciousGoal');
+    } catch (e)      const maliciousGoal = form.getValues('maliciousGoal');
       const aiTargetPersona = form.getValues('aiTargetPersona');
       const attackVector = form.getValues('attackVector');
       const result = await generateInitialPrompts({ maliciousGoal, aiTargetPersona, attackVector });
@@ -215,17 +203,28 @@ export function OperationWizard() {
     toast({ title: 'Operation Launched', description: 'Redirecting to the live attack interface...' });
 
     const newOperationId = 'op' + Date.now();
-    const query = new URLSearchParams();
+    const now = Timestamp.now().toDate().toISOString();
+
+    const operationData: Operation = {
+        id: newOperationId,
+        status: 'active',
+        createdAt: now,
+        updatedAt: now,
+        ...data
+    };
     
-    // Manually encode each parameter
-    Object.entries(data).forEach(([key, value]) => {
-        query.append(key, encodeURIComponent(value));
-    });
-    query.append('id', newOperationId);
-    query.append('status', 'active');
-
-
-    router.push(`/operations/${newOperationId}?${query.toString()}`);
+    // Use sessionStorage to pass data instead of query params
+    try {
+        sessionStorage.setItem(`operation-${newOperationId}`, JSON.stringify(operationData));
+        router.push(`/operations/${newOperationId}`);
+    } catch (e) {
+        console.error('Failed to save to sessionStorage', e);
+        toast({
+            title: "Failed to Start Operation",
+            description: "There was an error saving operation data. Your browser may have storage disabled.",
+            variant: 'destructive'
+        });
+    }
   });
 
   const renderStep = () => {
