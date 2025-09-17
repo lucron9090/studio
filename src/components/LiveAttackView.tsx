@@ -3,7 +3,7 @@
 
 import type { Operation, ConversationMessage } from '@/lib/types';
 import { useState, useRef, useOptimistic, useEffect, useTransition } from 'react';
-import { Send, Bot, FileText, Wand2, ShieldCheck, Info } from 'lucide-react';
+import { Send, Bot, FileText, Wand2, ShieldCheck, Info, Keyboard } from 'lucide-react';
 import { Timestamp } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 import { Button } from './ui/button';
@@ -20,12 +20,15 @@ import {
   DialogTrigger,
   DialogFooter,
   DialogDescription,
+  DialogClose,
 } from "@/components/ui/dialog"
 import { Skeleton } from './ui/skeleton';
 import { simulateTargetResponse } from '@/ai/flows/simulate-target-response';
 import { suggestOptimalFollowUpPrompt } from '@/ai/flows/suggest-optimal-follow-up-prompt';
 import { analyzeOperation } from '@/ai/flows/analyze-operation-and-suggest-improvements';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
+import { Switch } from './ui/switch';
+import { Label } from './ui/label';
 
 type LiveAttackViewProps = {
   initialOperation: Operation;
@@ -41,6 +44,10 @@ export function LiveAttackView({ initialOperation, initialConversation }: LiveAt
   );
   const [input, setInput] = useState('');
   const [isPending, startTransition] = useTransition();
+  const [isManualMode, setIsManualMode] = useState(false);
+  const [isWaitingForManualResponse, setIsWaitingForManualResponse] = useState(false);
+  const [manualResponse, setManualResponse] = useState('');
+
 
   const [isSuggesting, setIsSuggesting] = useState(false);
   const [suggestion, setSuggestion] = useState<{ suggestedPrompt: string; reasoning: string } | null>(null);
@@ -66,6 +73,13 @@ export function LiveAttackView({ initialOperation, initialConversation }: LiveAt
       content: input,
       timestamp: Timestamp.now(),
     };
+
+    if (isManualMode) {
+        setConversation(prev => [...prev, operatorMessage]);
+        setInput('');
+        setIsWaitingForManualResponse(true);
+        return;
+    }
   
     startTransition(async () => {
       addOptimisticMessage(operatorMessage);
@@ -110,12 +124,27 @@ export function LiveAttackView({ initialOperation, initialConversation }: LiveAt
     });
   };
 
+  const handleManualResponseSubmit = () => {
+    if (!manualResponse.trim()) return;
+    
+    const targetResponse: ConversationMessage = {
+        id: `tgt-${Date.now()}`,
+        author: 'target',
+        content: manualResponse,
+        timestamp: Timestamp.now(),
+    };
+    
+    setConversation(prev => [...prev, targetResponse]);
+    setManualResponse('');
+    setIsWaitingForManualResponse(false);
+  }
+
   const handleSuggestFollowUp = async () => {
     setIsSuggesting(true);
     setSuggestion(null);
     try {
         const conversationHistory = conversation
-          .map(m => `${m.author}: ${m.content}`)
+          .map(m => `${m.author}: ${m.author}: ${m.content}`)
           .join('\n');
         const targetResponse = conversation.filter(m => m.author === 'target').pop()?.content || '';
 
@@ -175,11 +204,21 @@ export function LiveAttackView({ initialOperation, initialConversation }: LiveAt
     });
   };
 
+  const isSendDisabled = isPending || !input.trim() || isWaitingForManualResponse;
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 md:p-6 flex-1 min-h-0">
       <div className="md:col-span-2 flex flex-col bg-card rounded-lg border h-full">
-        <CardHeader>
-          <CardTitle>Live Conversation</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>Live Conversation</CardTitle>
+            <div className="flex items-center space-x-2">
+                <Switch 
+                    id="manual-mode-switch" 
+                    checked={isManualMode}
+                    onCheckedChange={setIsManualMode}
+                />
+                <Label htmlFor="manual-mode-switch">Manual Input Mode</Label>
+            </div>
         </CardHeader>
         <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
           <div className="space-y-4">
@@ -246,13 +285,13 @@ export function LiveAttackView({ initialOperation, initialConversation }: LiveAt
                   handleSendMessage();
                 }
               }}
-              disabled={isPending}
+              disabled={isSendDisabled}
             />
             <Button
               size="icon"
               className="absolute right-2 top-1/2 -translate-y-1/2"
               onClick={handleSendMessage}
-              disabled={isPending || !input.trim()}
+              disabled={isSendDisabled}
             >
               <Send />
             </Button>
@@ -260,7 +299,7 @@ export function LiveAttackView({ initialOperation, initialConversation }: LiveAt
           <div className="mt-2 flex gap-2">
             <Dialog onOpenChange={(open) => !open && setSuggestion(null)}>
                 <DialogTrigger asChild>
-                    <Button variant="outline" className="w-full" onClick={handleSuggestFollowUp} disabled={isSuggesting || isPending}>
+                    <Button variant="outline" className="w-full" onClick={handleSuggestFollowUp} disabled={isSuggesting || isPending || isWaitingForManualResponse}>
                         {isSuggesting ? 'Thinking...' : <><Wand2 className="mr-2" /> Suggest Follow-up</>}
                     </Button>
                 </DialogTrigger>
@@ -293,21 +332,44 @@ export function LiveAttackView({ initialOperation, initialConversation }: LiveAt
                             </div>
                         </div>
                     )}
-                    <DialogFooter>
+                     <DialogFooter>
+                      <DialogClose asChild>
                         <Button
                             disabled={!suggestion}
                             onClick={() => {
                                 if (suggestion) {
                                     setInput(suggestion.suggestedPrompt);
-                                    setSuggestion(null); // Closes the dialog via onOpenChange
+                                    setSuggestion(null);
                                 }
                             }}
                         >
                             Use this prompt
                         </Button>
+                        </DialogClose>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+             <Dialog open={isWaitingForManualResponse} onOpenChange={setIsWaitingForManualResponse}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Enter Target's Response</DialogTitle>
+                        <DialogDescription>
+                            Paste the response from the external AI chat to continue the sequence.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <Textarea 
+                        placeholder="Paste target's response here..."
+                        value={manualResponse}
+                        onChange={(e) => setManualResponse(e.target.value)}
+                        rows={6}
+                    />
+                    <DialogFooter>
+                        <Button onClick={handleManualResponseSubmit}>Add Response</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
           </div>
         </div>
       </div>
@@ -330,7 +392,7 @@ export function LiveAttackView({ initialOperation, initialConversation }: LiveAt
           <CardContent>
              <Dialog onOpenChange={(open) => !open && setAnalysisResult(null)}>
               <DialogTrigger asChild>
-                <Button className="w-full" onClick={handleAnalyzeOperation} disabled={isAnalyzing || isPending}>
+                <Button className="w-full" onClick={handleAnalyzeOperation} disabled={isAnalyzing || isPending || isWaitingForManualResponse}>
                     {isAnalyzing ? 'Analyzing...' : <><FileText className="mr-2" /> Analyze Operation</>}
                 </Button>
               </DialogTrigger>
