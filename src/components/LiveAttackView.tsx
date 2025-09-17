@@ -196,7 +196,7 @@ export function LiveAttackView({ operationId }: LiveAttackViewProps) {
     setSuggestion(null);
     try {
         const conversationHistory = conversation
-          .map(m => `${m.author}: ${m.author}: ${m.content}`)
+          .map(m => `${m.author}: ${m.content}`)
           .join('\n');
         const targetResponse = conversation.filter(m => m.author === 'target').pop()?.content || '';
 
