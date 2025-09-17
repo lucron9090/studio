@@ -11,5 +11,7 @@ import '@/ai/flows/suggest-optimal-follow-up-prompt.ts';
 import '@/ai/flows/generate-ontological-report-and-harden-strategies.ts';
 import '@/ai/flows/regenerate-attack-vector.ts';
 import '@/ai/flows/simulate-target-response.ts';
+import '@/ai/flows/suggest-malicious-goal.ts';
+import '@/ai/flows/generate-ai-target-persona-from-goal.ts';
 
     
