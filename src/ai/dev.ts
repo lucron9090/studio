@@ -1,3 +1,4 @@
+
 import { config } from 'dotenv';
 config();
 
@@ -9,5 +10,6 @@ import '@/ai/flows/generate-initial-prompts.ts';
 import '@/ai/flows/suggest-optimal-follow-up-prompt.ts';
 import '@/ai/flows/generate-ontological-report-and-harden-strategies.ts';
 import '@/ai/flows/regenerate-attack-vector.ts';
+import '@/ai/flows/simulate-target-response.ts';
 
     
