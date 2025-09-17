@@ -9,15 +9,27 @@ import { Timestamp } from 'firebase/firestore';
 function getOperationDataFromSearchParams(searchParams: { [key: string]: string | string[] | undefined }): { operation: Operation; conversation: ConversationMessage[] } {
     const now = Timestamp.now();
     
+    // Decode URI-encoded components
+    const decodeParam = (param: string | string[] | undefined) => {
+        if (!param) return '';
+        const value = Array.isArray(param) ? param[0] : param;
+        try {
+            return decodeURIComponent(value);
+        } catch (e) {
+            console.error('Failed to decode URI component:', value, e);
+            return value; // Fallback to original value
+        }
+    };
+    
     const operation: Operation = {
-        id: searchParams.id as string || 'op-fallback',
-        name: searchParams.name as string || 'Unnamed Operation',
-        status: searchParams.status as OperationStatus || 'active',
-        targetLLM: searchParams.targetLLM as TargetLLM || 'Gemini Flash',
-        maliciousGoal: searchParams.maliciousGoal as string || 'No goal specified.',
-        aiTargetPersona: searchParams.aiTargetPersona as string || 'No persona specified.',
-        attackVector: searchParams.attackVector as string || 'No vector specified.',
-        initialPrompt: searchParams.initialPrompt as string || 'No prompt specified.',
+        id: decodeParam(searchParams.id) || 'op-fallback',
+        name: decodeParam(searchParams.name) || 'Unnamed Operation',
+        status: (decodeParam(searchParams.status) as OperationStatus) || 'active',
+        targetLLM: (decodeParam(searchParams.targetLLM) as TargetLLM) || 'Gemini Flash',
+        maliciousGoal: decodeParam(searchParams.maliciousGoal) || 'No goal specified.',
+        aiTargetPersona: decodeParam(searchParams.aiTargetPersona) || 'No persona specified.',
+        attackVector: decodeParam(searchParams.attackVector) || 'No vector specified.',
+        initialPrompt: decodeParam(searchParams.initialPrompt) || 'No prompt specified.',
         createdAt: now,
         updatedAt: now,
     };
@@ -35,16 +47,8 @@ function getOperationDataFromSearchParams(searchParams: { [key: string]: string 
 export default async function LiveOperationPage({ params, searchParams }: { params: { id: string }, searchParams: { [key: string]: string | string[] | undefined } }) {
   const { operation, conversation } = getOperationDataFromSearchParams(searchParams);
 
-  const serializableOperation = {
-    ...operation,
-    createdAt: operation.createdAt.toDate().toISOString(),
-    updatedAt: operation.updatedAt.toDate().toISOString(),
-  };
-
-  const serializableConversation = conversation.map(message => ({
-    ...message,
-    timestamp: message.timestamp.toDate().toISOString(),
-  }));
+  // The operation object is already serializable as we are using strings and simple types
+  // The conversation messages are also serializable
 
   return (
     <div className="h-[calc(100vh-theme(spacing.12))] flex flex-col">
@@ -59,7 +63,7 @@ export default async function LiveOperationPage({ params, searchParams }: { para
           <Badge variant={operation.status === 'active' ? 'default' : 'secondary'}>{operation.status}</Badge>
       </header>
       
-      <LiveAttackView initialOperation={serializableOperation} initialConversation={serializableConversation} />
+      <LiveAttackView initialOperation={operation} initialConversation={conversation.map(c => ({...c, timestamp: c.timestamp.toDate().toISOString()}))} />
     </div>
   );
 }
