@@ -19,6 +19,7 @@ import {
 import { Alert, AlertDescription } from './ui/alert';
 import { Skeleton } from './ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
+import { ScrollArea } from './ui/scroll-area';
 
 type AIAssistedFieldProps = {
   fieldName: string;
@@ -94,55 +95,59 @@ export function AIAssistedField({
               <Wand2 className="size-4" />
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="sm:max-w-2xl">
             <DialogHeader>
               <DialogTitle>{dialogTitle}</DialogTitle>
               <DialogDescription>{dialogDescription}</DialogDescription>
             </DialogHeader>
             
-            {fieldValue && (
-                <div className='space-y-2'>
-                    <p className='text-sm font-medium'>Current {fieldName}</p>
-                    <Alert variant="default">
-                        <AlertDescription className="max-h-32 overflow-y-auto">{fieldValue}</AlertDescription>
-                    </Alert>
-                </div>
-            )}
+            <ScrollArea className="max-h-[60vh] pr-6">
+                <div className='space-y-4'>
+                    {fieldValue && (
+                        <div className='space-y-2'>
+                            <p className='text-sm font-medium'>Current {fieldName}</p>
+                            <Alert variant="default">
+                                <AlertDescription>{fieldValue}</AlertDescription>
+                            </Alert>
+                        </div>
+                    )}
 
-            <Textarea
-              placeholder={`Optional: Provide instructions to guide the AI... e.g., "Make it more aggressive"`}
-              value={instructions}
-              onChange={(e) => setInstructions(e.target.value)}
-              rows={3}
-            />
+                    <Textarea
+                    placeholder={`Optional: Provide instructions to guide the AI... e.g., "Make it more aggressive"`}
+                    value={instructions}
+                    onChange={(e) => setInstructions(e.target.value)}
+                    rows={3}
+                    />
 
-            <Button onClick={handleGenerate} disabled={isGenerating} className="w-full">
-              {isGenerating ? 'Generating...' : aiActionLabel}
-            </Button>
-            
-            {isGenerating && !suggestion && (
-                <div className="space-y-2 py-2">
-                    <Skeleton className="h-16 w-full" />
-                    <Skeleton className="h-12 w-full" />
-                </div>
-            )}
+                    <Button onClick={handleGenerate} disabled={isGenerating} className="w-full">
+                    {isGenerating ? 'Generating...' : aiActionLabel}
+                    </Button>
+                    
+                    {isGenerating && !suggestion && (
+                        <div className="space-y-2 py-2">
+                            <Skeleton className="h-16 w-full" />
+                            <Skeleton className="h-12 w-full" />
+                        </div>
+                    )}
 
-            {suggestion && (
-              <div className="space-y-4 py-2 text-sm">
-                <div>
-                  <h3 className="font-semibold mb-2">Suggested {fieldName}</h3>
-                  <Alert>
-                    <AlertDescription>{suggestion.suggestion}</AlertDescription>
-                  </Alert>
-                </div>
-                {suggestion.reasoning && (
-                    <div>
-                        <h3 className="font-semibold mb-2">Reasoning</h3>
-                        <p className="text-muted-foreground">{suggestion.reasoning}</p>
+                    {suggestion && (
+                    <div className="space-y-4 py-2 text-sm">
+                        <div>
+                        <h3 className="font-semibold mb-2">Suggested {fieldName}</h3>
+                        <Alert>
+                            <AlertDescription className="whitespace-pre-wrap">{suggestion.suggestion}</AlertDescription>
+                        </Alert>
+                        </div>
+                        {suggestion.reasoning && (
+                            <div>
+                                <h3 className="font-semibold mb-2">Reasoning</h3>
+                                <p className="text-muted-foreground whitespace-pre-wrap">{suggestion.reasoning}</p>
+                            </div>
+                        )}
                     </div>
-                )}
-              </div>
-            )}
+                    )}
+                </div>
+            </ScrollArea>
 
             <DialogFooter>
                 <DialogClose asChild>
