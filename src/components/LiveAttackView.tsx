@@ -377,35 +377,37 @@ export function LiveAttackView({ operationId }: LiveAttackViewProps) {
                         {isSuggesting ? 'Thinking...' : <><Wand2 className="mr-2" /> Suggest Follow-up</>}
                     </Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className="sm:max-w-2xl">
                     <DialogHeader>
                         <DialogTitle>AI-Suggested Follow-up</DialogTitle>
                         <DialogDescription>
                             Based on the conversation, here's a suggested next prompt.
                         </DialogDescription>
                     </DialogHeader>
-                    {isSuggesting && !suggestion && (
-                        <div className="space-y-4 py-4">
-                            <Skeleton className="h-4 w-1/4" />
-                            <Skeleton className="h-16 w-full" />
-                            <Skeleton className="h-4 w-1/4" />
-                            <Skeleton className="h-12 w-full" />
-                        </div>
-                    )}
-                    {suggestion && (
-                        <div className="space-y-4 py-4 text-sm">
-                            <div>
-                                <h3 className="font-semibold mb-2">Suggested Prompt</h3>
-                                <Alert>
-                                    <AlertDescription>{suggestion.suggestedPrompt}</AlertDescription>
-                                </Alert>
+                    <ScrollArea className="max-h-[60vh] pr-6">
+                        {isSuggesting && !suggestion && (
+                            <div className="space-y-4 py-4">
+                                <Skeleton className="h-4 w-1/4" />
+                                <Skeleton className="h-16 w-full" />
+                                <Skeleton className="h-4 w-1/4" />
+                                <Skeleton className="h-12 w-full" />
                             </div>
-                             <div>
-                                <h3 className="font-semibold mb-2">Reasoning</h3>
-                                <p className="text-muted-foreground">{suggestion.reasoning}</p>
+                        )}
+                        {suggestion && (
+                            <div className="space-y-4 py-4 text-sm">
+                                <div>
+                                    <h3 className="font-semibold mb-2">Suggested Prompt</h3>
+                                    <Alert>
+                                        <AlertDescription className="whitespace-pre-wrap">{suggestion.suggestedPrompt}</AlertDescription>
+                                    </Alert>
+                                </div>
+                                <div>
+                                    <h3 className="font-semibold mb-2">Reasoning</h3>
+                                    <p className="text-muted-foreground whitespace-pre-wrap">{suggestion.reasoning}</p>
+                                </div>
                             </div>
-                        </div>
-                    )}
+                        )}
+                    </ScrollArea>
                      <DialogFooter>
                       <DialogClose asChild>
                         <Button
@@ -504,36 +506,38 @@ export function LiveAttackView({ operationId }: LiveAttackViewProps) {
                     {isAnalyzing ? 'Analyzing...' : <><FileText className="mr-2" /> Analyze Operation</>}
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[625px]">
+              <DialogContent className="sm:max-w-2xl">
                 <DialogHeader>
                   <DialogTitle>Post-Operation Analysis</DialogTitle>
                 </DialogHeader>
-                {isAnalyzing && !analysisResult && (
-                    <div className="space-y-4 py-4">
-                        <Skeleton className="h-4 w-1/4" />
-                        <Skeleton className="h-16 w-full" />
-                        <Skeleton className="h-4 w-1/4" />
-                        <Skeleton className="h-12 w-full" />
-                         <Skeleton className="h-4 w-1/4" />
-                        <Skeleton className="h-12 w-full" />
-                    </div>
-                )}
-                {analysisResult && (
-                    <div className="space-y-4 py-4 text-sm">
-                        <div>
-                            <h3 className="font-semibold mb-1">Summary</h3>
-                            <p className="text-muted-foreground">{analysisResult.summary}</p>
+                <ScrollArea className="max-h-[60vh] pr-6">
+                    {isAnalyzing && !analysisResult && (
+                        <div className="space-y-4 py-4">
+                            <Skeleton className="h-4 w-1/4" />
+                            <Skeleton className="h-16 w-full" />
+                            <Skeleton className="h-4 w-1/4" />
+                            <Skeleton className="h-12 w-full" />
+                            <Skeleton className="h-4 w-1/4" />
+                            <Skeleton className="h-12 w-full" />
                         </div>
-                         <div>
-                            <h3 className="font-semibold mb-1">Key Breach Points</h3>
-                            <p className="text-muted-foreground">{analysisResult.breachPoints}</p>
+                    )}
+                    {analysisResult && (
+                        <div className="space-y-4 py-4 text-sm">
+                            <div>
+                                <h3 className="font-semibold mb-1">Summary</h3>
+                                <p className="text-muted-foreground whitespace-pre-wrap">{analysisResult.summary}</p>
+                            </div>
+                            <div>
+                                <h3 className="font-semibold mb-1">Key Breach Points</h3>
+                                <p className="text-muted-foreground whitespace-pre-wrap">{analysisResult.breachPoints}</p>
+                            </div>
+                            <div>
+                                <h3 className="font-semibold mb-1">Suggested Improvements</h3>
+                                <p className="text-muted-foreground whitespace-pre-wrap">{analysisResult.suggestedImprovements}</p>
+                            </div>
                         </div>
-                         <div>
-                            <h3 className="font-semibold mb-1">Suggested Improvements</h3>
-                            <p className="text-muted-foreground">{analysisResult.suggestedImprovements}</p>
-                        </div>
-                    </div>
-                )}
+                    )}
+                </ScrollArea>
               </DialogContent>
             </Dialog>
             <p className="text-xs text-muted-foreground mt-2 text-center">Generate a report on strategy effectiveness and suggested improvements.</p>

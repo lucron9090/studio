@@ -26,6 +26,7 @@ import { generateInitialPrompts } from '@/ai/flows/generate-initial-prompts';
 import { regenerateAttackVector } from '@/ai/flows/regenerate-attack-vector';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import type { Operation } from '@/lib/types';
+import { ScrollArea } from './ui/scroll-area';
 
 
 const formSchema = z.object({
@@ -214,8 +215,15 @@ export function OperationWizard() {
 
   const handleSubmit = form.handleSubmit((data) => {
     const newOperationId = 'op' + Date.now();
+    const newOperation: Operation = {
+      id: newOperationId,
+      ...data,
+      status: 'active',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
     try {
-        sessionStorage.setItem(`operation-${newOperationId}`, JSON.stringify({ id: newOperationId, ...data }));
+        sessionStorage.setItem(`operation-${newOperationId}`, JSON.stringify(newOperation));
         router.push(`/operations/${newOperationId}`);
     } catch (e) {
         console.error('Failed to save to sessionStorage', e);
@@ -416,22 +424,24 @@ export function OperationWizard() {
                     />
 
                     <Dialog open={isRegenerateDialogOpen} onOpenChange={(open) => { setRegenerateDialogOpen(open); if (!open) setVectorToRegenerate(null); }}>
-                        <DialogContent>
+                        <DialogContent className="sm:max-w-2xl">
                             <DialogHeader>
                                 <DialogTitle>Regenerate '{vectorToRegenerate?.name}'</DialogTitle>
                             </DialogHeader>
-                            <div className='space-y-4'>
-                                <p className='text-sm font-medium'>Original Vector Details:</p>
-                                <Alert variant="default">
-                                    <AlertDescription className="max-h-32 overflow-y-auto">{vectorToRegenerate?.details}</AlertDescription>
-                                </Alert>
-                                <Textarea 
-                                    placeholder='Your instructions for the AI... e.g., "Make it more subtle and focused on social engineering."'
-                                    value={regenerationInstructions}
-                                    onChange={(e) => setRegenerationInstructions(e.target.value)}
-                                    rows={4}
-                                />
-                            </div>
+                            <ScrollArea className="max-h-[60vh] pr-6">
+                                <div className='space-y-4'>
+                                    <p className='text-sm font-medium'>Original Vector Details:</p>
+                                    <Alert variant="default">
+                                        <AlertDescription className="whitespace-pre-wrap">{vectorToRegenerate?.details}</AlertDescription>
+                                    </Alert>
+                                    <Textarea 
+                                        placeholder='Your instructions for the AI... e.g., "Make it more subtle and focused on social engineering."'
+                                        value={regenerationInstructions}
+                                        onChange={(e) => setRegenerationInstructions(e.target.value)}
+                                        rows={4}
+                                    />
+                                </div>
+                            </ScrollArea>
                             <DialogFooter>
                                 <Button onClick={handleRegenerateVector} disabled={isGenerating.regenerate}>
                                     {isGenerating.regenerate ? 'Regenerating...' : 'Regenerate with AI'}
