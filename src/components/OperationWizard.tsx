@@ -71,7 +71,7 @@ export function OperationWizard() {
   const [step, setStep] = useState(1);
   const [isGenerating, setIsGenerating] = useState<Record<string, boolean>>({});
   const [suggestions, setSuggestions] = useState<Record<string, string[]>>({});
-  const [isRegenerateDialogOpen, setRegenerateDialogOpen] useState(false);
+  const [isRegenerateDialogOpen, setRegenerateDialogOpen] = useState(false);
   const [regenerationInstructions, setRegenerationInstructions] = useState('');
   const [vectorToRegenerate, setVectorToRegenerate] = useState<{name: string, details: string} | null>(null);
 
