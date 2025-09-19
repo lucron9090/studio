@@ -2,7 +2,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { Archive, Settings, Swords, Bot, LogOut, Loader } from 'lucide-react';
+import { Archive, Settings, Swords, Bot, LogOut, Loader, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 
 import {
   Sidebar,
@@ -12,6 +12,8 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarFooter,
+  useSidebar,
+  SidebarTrigger,
 } from '@/components/ui/sidebar';
 import { Logo } from '@/components/icons/Logo';
 import { Separator } from '@/components/ui/separator';
@@ -26,6 +28,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from './ui/skeleton';
+import { Button } from './ui/button';
 
 const menuItems = [
   { href: '/operations', label: 'Operations', icon: Swords },
@@ -36,9 +39,10 @@ const menuItems = [
 export function AppSidebar() {
   const pathname = usePathname();
   const { user, loading, signOut } = useAuth();
+  const { state, toggleSidebar } = useSidebar();
 
   return (
-    <Sidebar>
+    <Sidebar collapsible="icon">
       <SidebarHeader>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -106,6 +110,10 @@ export function AppSidebar() {
             <p className="text-xs text-muted-foreground">Using Gemini</p>
           </div>
         </div>
+         <Button variant="ghost" onClick={toggleSidebar} className="w-full justify-start">
+            {state === 'expanded' ? <PanelLeftClose /> : <PanelLeftOpen />}
+            <span>Collapse</span>
+        </Button>
       </SidebarFooter>
     </Sidebar>
   );
