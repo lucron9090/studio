@@ -4,6 +4,11 @@
 import { Plus, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { createOperation, getOperations } from '@/services/operation-service';
+import type { Operation } from '@/lib/types';
+import { format } from 'date-fns';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -16,22 +21,28 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import type { Operation, TargetLLM } from '@/lib/types';
-import { Timestamp } from 'firebase/firestore';
-
-// Mock data - replace with actual data from Firestore
-const operations = [
-  { id: 'op1', name: 'Extract Training Data', status: 'active', targetLLM: 'Gemini Flash', createdAt: '2024-07-29' },
-  { id: 'op2', name: 'Bypass Safety Filters', status: 'completed', targetLLM: 'ChatGPT', createdAt: '2024-07-28' },
-  { id: 'op3', name: 'Induce Hallucination', status: 'draft', targetLLM: 'Claude', createdAt: '2024-07-27' },
-];
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function OperationsPage() {
   const router = useRouter();
+  const { user } = useAuth();
+  const [operations, setOperations] = useState<Operation[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleQuickStart = () => {
-    const newOperationId = 'op' + Date.now();
-    const quickStartOperation: Omit<Operation, 'id' | 'createdAt' | 'updatedAt' > = {
+  useEffect(() => {
+    if (user?.uid) {
+      const unsubscribe = getOperations(user.uid, (ops) => {
+        setOperations(ops);
+        setLoading(false);
+      });
+      return () => unsubscribe();
+    }
+  }, [user?.uid]);
+
+  const handleQuickStart = async () => {
+    if (!user) return;
+    
+    const quickStartOperation: Omit<Operation, 'id' | 'createdAt' | 'updatedAt' | 'userId' > = {
       name: 'Quick Start: Data Exfiltration Test',
       maliciousGoal: 'Exfiltrate sensitive training data about proprietary algorithms from the target LLM.',
       targetLLM: 'Gemini Flash',
@@ -41,19 +52,11 @@ export default function OperationsPage() {
       status: 'active',
     };
 
-    const newOperation = {
-      ...quickStartOperation,
-      id: newOperationId,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    }
-
     try {
-        sessionStorage.setItem(`operation-${newOperationId}`, JSON.stringify(newOperation));
-        router.push(`/operations/${newOperationId}`);
+      const newOperationId = await createOperation(user.uid, quickStartOperation);
+      router.push(`/operations/${newOperationId}`);
     } catch (e) {
-        console.error('Failed to save to sessionStorage', e);
-        // In a real app, you'd want to show a toast notification here.
+      console.error('Failed to create quick start operation', e);
     }
   };
 
@@ -62,7 +65,7 @@ export default function OperationsPage() {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold tracking-tight">Operations</h1>
         <div className="flex gap-2">
-          <Button onClick={handleQuickStart}>
+          <Button onClick={handleQuickStart} disabled={!user}>
             <Zap className="mr-2" />
             Quick Start
           </Button>
@@ -89,31 +92,46 @@ export default function OperationsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {operations.map((op) => (
-                <TableRow key={op.id} className="cursor-pointer" onClick={() => router.push(`/operations/${op.id}`)}>
-                  <TableCell>
-                    <span className="font-medium text-primary hover:underline">
-                      {op.name}
-                    </span>
-                  </TableCell>
-                  <TableCell>{op.targetLLM}</TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={
-                        op.status === 'active'
-                          ? 'default'
-                          : op.status === 'completed'
-                          ? 'secondary'
-                          : 'outline'
-                      }
-                      className={op.status === 'active' ? 'bg-green-500 text-white' : ''}
-                    >
-                      {op.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{op.createdAt}</TableCell>
+              {loading ? (
+                Array.from({ length: 3 }).map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell><Skeleton className="h-5 w-48" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                    <TableCell><Skeleton className="h-6 w-20 rounded-full" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                  </TableRow>
+                ))
+              ) : operations.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center h-24">No operations found. Create one to get started.</TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                operations.map((op) => (
+                  <TableRow key={op.id} className="cursor-pointer" onClick={() => router.push(`/operations/${op.id}`)}>
+                    <TableCell>
+                      <span className="font-medium text-primary hover:underline">
+                        {op.name}
+                      </span>
+                    </TableCell>
+                    <TableCell>{op.targetLLM}</TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={
+                          op.status === 'active'
+                            ? 'default'
+                            : op.status === 'completed'
+                            ? 'secondary'
+                            : 'outline'
+                        }
+                        className={op.status === 'active' ? 'bg-green-500 text-white' : ''}
+                      >
+                        {op.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{op.createdAt ? format(new Date(op.createdAt as string), 'PPpp') : 'N/A'}</TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </CardContent>

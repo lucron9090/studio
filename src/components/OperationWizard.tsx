@@ -27,7 +27,8 @@ import { regenerateAttackVector } from '@/ai/flows/regenerate-attack-vector';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import type { Operation } from '@/lib/types';
 import { ScrollArea } from './ui/scroll-area';
-
+import { createOperation } from '@/services/operation-service';
+import { useAuth } from '@/contexts/AuthContext';
 
 const formSchema = z.object({
   name: z.string().min(3, 'Operation name must be at least 3 characters.'),
@@ -68,12 +69,13 @@ export function OperationWizard() {
   const [step, setStep] = useState(1);
   const [isGenerating, setIsGenerating] = useState<Record<string, boolean>>({});
   const [suggestions, setSuggestions] = useState<Record<string, string[]>>({});
-  const [isRegenerateDialogOpen, setRegenerateDialogOpen] = useState(false);
+  const [isRegenerateDialogOpen, setRegenerateDialogOpen] useState(false);
   const [regenerationInstructions, setRegenerationInstructions] = useState('');
   const [vectorToRegenerate, setVectorToRegenerate] = useState<{name: string, details: string} | null>(null);
 
   const router = useRouter();
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -213,23 +215,29 @@ export function OperationWizard() {
   }
 
 
-  const handleSubmit = form.handleSubmit((data) => {
-    const newOperationId = 'op' + Date.now();
-    const newOperation: Operation = {
-      id: newOperationId,
+  const handleSubmit = form.handleSubmit(async (data) => {
+    if (!user) {
+        toast({
+            title: "Authentication Error",
+            description: "You must be logged in to create an operation.",
+            variant: 'destructive'
+        });
+        return;
+    }
+
+    const newOperationData = {
       ...data,
-      status: 'active',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      status: 'active' as const,
     };
+    
     try {
-        sessionStorage.setItem(`operation-${newOperationId}`, JSON.stringify(newOperation));
+        const newOperationId = await createOperation(user.uid, newOperationData);
         router.push(`/operations/${newOperationId}`);
     } catch (e) {
-        console.error('Failed to save to sessionStorage', e);
+        console.error('Failed to create operation', e);
         toast({
             title: "Failed to Start Operation",
-            description: "There was an error saving operation data. Your browser may have storage disabled.",
+            description: "There was an error saving the operation to the database.",
             variant: 'destructive'
         });
     }
