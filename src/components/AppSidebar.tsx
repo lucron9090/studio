@@ -13,7 +13,6 @@ import {
   SidebarMenuButton,
   SidebarFooter,
   useSidebar,
-  SidebarTrigger,
 } from '@/components/ui/sidebar';
 import { Logo } from '@/components/icons/Logo';
 import { Separator } from '@/components/ui/separator';
@@ -29,6 +28,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from './ui/skeleton';
 import { Button } from './ui/button';
+import { cn } from '@/lib/utils';
 
 const menuItems = [
   { href: '/operations', label: 'Operations', icon: Swords },
@@ -41,18 +41,20 @@ export function AppSidebar() {
   const { user, loading, signOut } = useAuth();
   const { state, toggleSidebar } = useSidebar();
 
+  const isCollapsed = state === 'collapsed';
+
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
+      <SidebarHeader className={cn("flex items-center", isCollapsed && "justify-center")}>
+        <div className={cn("flex items-center gap-2", isCollapsed && "gap-0")}>
             <Logo className="size-8 text-sidebar-primary" />
-            <div className="flex flex-col">
+            <div className={cn("flex flex-col duration-200", isCollapsed && "hidden")}>
               <h2 className="text-lg font-semibold tracking-tight text-sidebar-primary">
                 Red Team OS
               </h2>
             </div>
-          </div>
+        </div>
+        <div className={cn(isCollapsed && "hidden")}>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               {loading ? (
@@ -103,16 +105,16 @@ export function AppSidebar() {
       </SidebarContent>
       <Separator />
       <SidebarFooter>
-        <div className="flex items-center gap-3 p-2 rounded-lg bg-sidebar-accent text-sidebar-accent-foreground">
+        <div className={cn("flex items-center gap-3 p-2 rounded-lg bg-sidebar-accent text-sidebar-accent-foreground", isCollapsed && "justify-center")}>
           <Bot className="size-6 shrink-0"/>
-          <div className="flex flex-col">
+          <div className={cn("flex flex-col duration-200", isCollapsed && "hidden")}>
             <p className="text-sm font-medium">AI-Powered</p>
             <p className="text-xs text-muted-foreground">Using Gemini</p>
           </div>
         </div>
          <Button variant="ghost" onClick={toggleSidebar} className="w-full justify-start">
             {state === 'expanded' ? <PanelLeftClose /> : <PanelLeftOpen />}
-            <span>Collapse</span>
+            <span className={cn(isCollapsed && "hidden")}>Collapse</span>
         </Button>
       </SidebarFooter>
     </Sidebar>
