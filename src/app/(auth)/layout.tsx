@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { Loader } from 'lucide-react';
 
-function AuthLayoutContent({ children }: { children: React.ReactNode }) {
+export default function AuthLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const router = useRouter();
 
@@ -25,11 +25,4 @@ function AuthLayoutContent({ children }: { children: React.ReactNode }) {
   }
 
   return <>{children}</>;
-}
-
-
-export default function AuthLayout({ children }: { children: React.ReactNode }) {
-  return (
-      <AuthLayoutContent>{children}</AuthLayoutContent>
-  );
 }
