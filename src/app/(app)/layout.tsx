@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { Loader } from 'lucide-react';
 
-function AppLayoutContent({ children }: { children: React.ReactNode }) {
+export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const router = useRouter();
 
@@ -31,12 +31,5 @@ function AppLayoutContent({ children }: { children: React.ReactNode }) {
       <AppSidebar />
       <SidebarInset>{children}</SidebarInset>
     </SidebarProvider>
-  );
-}
-
-
-export default function AppLayout({ children }: { children: React.ReactNode }) {
-  return (
-      <AppLayoutContent>{children}</AppLayoutContent>
   );
 }
