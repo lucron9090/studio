@@ -1,3 +1,4 @@
+
 import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
 import { getFirestore, connectFirestoreEmulator, type Firestore } from 'firebase/firestore';
 import { getAuth, connectAuthEmulator, type Auth } from 'firebase/auth';
@@ -15,6 +16,7 @@ let app: FirebaseApp;
 let auth: Auth;
 let db: Firestore;
 
+<<<<<<< HEAD
 const useEmulators = process.env.FIREBASE_USE_EMULATORS === 'true';
 
 if (useEmulators) {
@@ -38,7 +40,19 @@ if (useEmulators) {
   app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
   auth = getAuth(app);
   db = getFirestore(app);
-}
+=======
+app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+auth = getAuth(app);
+db = getFirestore(app);
 
+if (process.env.NODE_ENV === 'development' && typeof window === 'undefined') {
+  try {
+    connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
+    connectFirestoreEmulator(db, 'localhost', 8080);
+  } catch (e) {
+    console.log('Emulators already running');
+  }
+>>>>>>> 628f8e0 (Try fixing this error: `Unhandled Runtime Error: TypeError: undefined is)
+}
 
 export { app, db, auth };
