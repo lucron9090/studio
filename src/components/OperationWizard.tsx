@@ -71,12 +71,13 @@ export function OperationWizard() {
   const [step, setStep] = useState(1);
   const [isGenerating, setIsGenerating] = useState<Record<string, boolean>>({});
   const [suggestions, setSuggestions] = useState<Record<string, string[]>>({});
-  const [isRegenerateDialogOpen, setRegenerateDialogOpen] = useState(false);
+  const [isRegenerateDialogOpen, setRegenerateDialogOpen] useState(false);
   const [regenerationInstructions, setRegenerationInstructions] = useState('');
   const [vectorToRegenerate, setVectorToRegenerate] = useState<{name: string, details: string} | null>(null);
 
   const router = useRouter();
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -252,18 +253,17 @@ export function OperationWizard() {
     const newOperation: Operation = {
       id: newOperationId,
       ...data,
-      status: 'active',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      status: 'active' as const,
     };
+    
     try {
-        sessionStorage.setItem(`operation-${newOperationId}`, JSON.stringify(newOperation));
+        const newOperationId = await createOperation(user.uid, newOperationData);
         router.push(`/operations/${newOperationId}`);
     } catch (e) {
-        console.error('Failed to save to sessionStorage', e);
+        console.error('Failed to create operation', e);
         toast({
             title: "Failed to Start Operation",
-            description: "There was an error saving operation data. Your browser may have storage disabled.",
+            description: "There was an error saving the operation to the database.",
             variant: 'destructive'
         });
     }

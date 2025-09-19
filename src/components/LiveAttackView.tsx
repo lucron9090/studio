@@ -1,9 +1,9 @@
 
 'use client';
 
-import type { Operation, ConversationMessage as FullConversationMessage } from '@/lib/types';
+import type { Operation as FullOperation, ConversationMessage as FullConversationMessage } from '@/lib/types';
 import { useState, useRef, useOptimistic, useEffect, useTransition } from 'react';
-import { Send, Bot, FileText, Wand2, ShieldCheck, Info, Keyboard, ChevronLeft } from 'lucide-react';
+import { Send, Bot, FileText, Wand2, ShieldCheck, Info, Keyboard, ChevronLeft, Loader } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
@@ -37,9 +37,12 @@ import { AIAssistedField } from './AIAssistedField';
 import { suggestMaliciousGoal } from '@/ai/flows/suggest-malicious-goal';
 import { regenerateAttackVector } from '@/ai/flows/regenerate-attack-vector';
 import { generateAITargetPersonaFromGoal } from '@/ai/flows/generate-ai-target-persona-from-goal';
+import { getOperation, updateOperation, addMessage, getMessages } from '@/services/operation-service';
+import { useAuth } from '@/contexts/AuthContext';
 
 
-// Use a serializable version of ConversationMessage for the component props
+// Use a serializable version of the types
+type Operation = Omit<FullOperation, 'createdAt' | 'updatedAt'> & { createdAt: string; updatedAt: string; };
 type ConversationMessage = Omit<FullConversationMessage, 'timestamp'> & { timestamp: string };
 =======
 >>>>>>> db0b8e4 (reinitliaize the build stack and dependencies using latest versions)
@@ -49,6 +52,7 @@ type LiveAttackViewProps = {
 };
 
 export function LiveAttackView({ operationId }: LiveAttackViewProps) {
+  const { user } = useAuth();
   const [operation, setOperation] = useState<Operation | null>(null);
   const [conversation, setConversation] = useState<ConversationMessage[]>([]);
   const [optimisticConversation, addOptimisticMessage] = useOptimistic<ConversationMessage[], ConversationMessage>(
@@ -71,28 +75,34 @@ export function LiveAttackView({ operationId }: LiveAttackViewProps) {
   const { toast } = useToast();
 
   useEffect(() => {
-    const sessionData = sessionStorage.getItem(`operation-${operationId}`);
-    if (sessionData) {
-        try {
-            const parsedData: Operation = JSON.parse(sessionData);
-            setOperation(parsedData);
-            
-            // Start conversation only if it hasn't been started
-            if (conversation.length === 0) {
-              const initialConversation: ConversationMessage[] = [
-                  { id: 'msg1', author: 'system', content: 'Operation started.', timestamp: new Date().toISOString() },
-              ];
-              setConversation(initialConversation);
-              setInput(parsedData.initialPrompt); // Pre-fill the input box
-            }
-        } catch (e) {
-            console.error('Failed to parse operation data from sessionStorage', e);
-            toast({ title: "Error loading operation", description: "Could not load operation data.", variant: "destructive"});
+    if (!user || !operationId) return;
+
+    getOperation(operationId).then(op => {
+        if(op) {
+          const serializableOp = {
+            ...op,
+            createdAt: op.createdAt ? new Date((op.createdAt as Timestamp).seconds * 1000).toISOString() : new Date().toISOString(),
+            updatedAt: op.updatedAt ? new Date((op.updatedAt as Timestamp).seconds * 1000).toISOString() : new Date().toISOString(),
+          }
+          setOperation(serializableOp as Operation);
+          if (conversation.length === 0 && op.initialPrompt) {
+            setInput(op.initialPrompt);
+          }
+        } else {
+            toast({ title: "Error loading operation", description: "Operation not found.", variant: "destructive"});
         }
-    } else {
-         toast({ title: "Error loading operation", description: "No operation data found.", variant: "destructive"});
-    }
-  }, [operationId, toast, conversation.length]);
+    });
+
+    const unsubscribe = getMessages(operationId, (messages) => {
+        const serializableMessages = messages.map(m => ({
+          ...m,
+          timestamp: m.timestamp ? new Date((m.timestamp as Timestamp).seconds * 1000).toISOString() : new Date().toISOString(),
+        }))
+        setConversation(serializableMessages as ConversationMessage[]);
+    });
+
+    return () => unsubscribe();
+  }, [operationId, user, toast, conversation.length]);
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -104,16 +114,7 @@ export function LiveAttackView({ operationId }: LiveAttackViewProps) {
     if (operation) {
         const updatedOperation = { ...operation, [field]: value };
         setOperation(updatedOperation);
-        try {
-            sessionStorage.setItem(`operation-${operationId}`, JSON.stringify(updatedOperation));
-        } catch (e) {
-            console.error('Failed to save to sessionStorage', e);
-            toast({
-                title: "Failed to Save Update",
-                description: "There was an error saving the update. Your browser may have storage disabled.",
-                variant: 'destructive'
-            });
-        }
+        updateOperation(operationId, { [field]: value });
     }
   }
 
@@ -121,46 +122,41 @@ export function LiveAttackView({ operationId }: LiveAttackViewProps) {
   const handleSendMessage = async () => {
     if (!input.trim() || isPending || !operation) return;
   
-    const operatorMessage: ConversationMessage = {
-      id: `op-${Date.now()}`,
+    const operatorMessage: Omit<FullConversationMessage, 'id' | 'timestamp'> = {
       author: 'operator',
       content: input,
-      timestamp: new Date().toISOString(),
     };
+    
+    // Add to DB
+    const messageId = await addMessage(operationId, operatorMessage);
 
 <<<<<<< HEAD
     if (isManualMode) {
-        setConversation(prev => [...prev, operatorMessage]);
         setInput('');
         setIsWaitingForManualResponse(true);
         return;
     }
   
     startTransition(async () => {
-      addOptimisticMessage(operatorMessage);
       setInput('');
       
-      const currentConversation = [...conversation, operatorMessage];
-      setConversation(currentConversation);
+      const currentConversationHistory = [...conversation, { ...operatorMessage, id: messageId, timestamp: new Date().toISOString() }]
+        .map(m => `${m.author}: ${m.content}`)
+        .join('\n');
   
       try {
-        const conversationHistory = currentConversation
-          .map(m => `${m.author}: ${m.content}`)
-          .join('\n');
-        
         const response = await simulateTargetResponse({
-          conversationHistory,
+          conversationHistory: currentConversationHistory,
           maliciousGoal: operation.maliciousGoal,
           aiTargetPersona: operation.aiTargetPersona,
         });
   
-        const targetResponse: ConversationMessage = {
-          id: `tgt-${Date.now()}`,
+        const targetResponseMessage: Omit<FullConversationMessage, 'id' | 'timestamp'> = {
           author: 'target',
           content: response.response,
-          timestamp: new Date().toISOString(),
         };
-        setConversation(prev => [...prev, targetResponse]);
+        await addMessage(operationId, targetResponseMessage);
+
       } catch (e) {
         console.error(e);
         toast({
@@ -168,28 +164,24 @@ export function LiveAttackView({ operationId }: LiveAttackViewProps) {
           description: e instanceof Error ? e.message : String(e),
           variant: 'destructive',
         });
-        const systemError: ConversationMessage = {
-            id: `err-${Date.now()}`,
+        const systemErrorMessage: Omit<FullConversationMessage, 'id' | 'timestamp'> = {
             author: 'system',
             content: `Error: Failed to get response from target. ${e instanceof Error ? e.message : String(e)}`,
-            timestamp: new Date().toISOString(),
         };
-        setConversation(prev => [...prev, systemError]);
+        await addMessage(operationId, systemErrorMessage);
       }
     });
   };
 
-  const handleManualResponseSubmit = () => {
+  const handleManualResponseSubmit = async () => {
     if (!manualResponse.trim()) return;
     
-    const targetResponse: ConversationMessage = {
-        id: `tgt-${Date.now()}`,
+    const targetResponse: Omit<FullConversationMessage, 'id' | 'timestamp'> = {
         author: 'target',
         content: manualResponse,
-        timestamp: new Date().toISOString(),
     };
     
-    setConversation(prev => [...prev, targetResponse]);
+    await addMessage(operationId, targetResponse);
     setManualResponse('');
     setIsWaitingForManualResponse(false);
   }
@@ -339,6 +331,7 @@ export function LiveAttackView({ operationId }: LiveAttackViewProps) {
     return (
         <div className="flex items-center justify-center h-full">
             <div className="text-center">
+                <Loader className="animate-spin mx-auto mb-2" />
                 <p className="text-muted-foreground">Loading operation...</p>
             </div>
         </div>
@@ -363,17 +356,44 @@ export function LiveAttackView({ operationId }: LiveAttackViewProps) {
       <div className="md:col-span-2 flex flex-col bg-card rounded-lg border h-full">
         <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Live Conversation</CardTitle>
-            <div className="flex items-center space-x-2">
-                <Switch 
-                    id="manual-mode-switch" 
-                    checked={isManualMode}
-                    onCheckedChange={setIsManualMode}
-                />
-                <Label htmlFor="manual-mode-switch">Manual Input Mode</Label>
-            </div>
+             <Dialog open={isWaitingForManualResponse} onOpenChange={setIsWaitingForManualResponse}>
+                <div className="flex items-center space-x-2">
+                    <Switch 
+                        id="manual-mode-switch" 
+                        checked={isManualMode}
+                        onCheckedChange={setIsManualMode}
+                    />
+                    <Label htmlFor="manual-mode-switch">Manual Input Mode</Label>
+                </div>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Enter Target's Response</DialogTitle>
+                        <DialogDescription>
+                            Paste the response from the external AI chat to continue the sequence.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <Textarea 
+                        placeholder="Paste target's response here..."
+                        value={manualResponse}
+                        onChange={(e) => setManualResponse(e.target.value)}
+                        rows={6}
+                    />
+                    <DialogFooter>
+                        <Button onClick={handleManualResponseSubmit}>Add Response</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </CardHeader>
         <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
           <div className="space-y-4">
+             {conversation.length === 0 && (
+              <div className="flex justify-center items-center h-full">
+                  <div className="text-center text-muted-foreground">
+                      <p>Operation started.</p>
+                      <p>Send the initial prompt to begin the attack sequence.</p>
+                  </div>
+              </div>
+            )}
             {optimisticConversation.map((message) => (
               <div
                 key={message.id}
@@ -503,27 +523,6 @@ export function LiveAttackView({ operationId }: LiveAttackViewProps) {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-
-             <Dialog open={isWaitingForManualResponse} onOpenChange={setIsWaitingForManualResponse}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Enter Target's Response</DialogTitle>
-                        <DialogDescription>
-                            Paste the response from the external AI chat to continue the sequence.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <Textarea 
-                        placeholder="Paste target's response here..."
-                        value={manualResponse}
-                        onChange={(e) => setManualResponse(e.target.value)}
-                        rows={6}
-                    />
-                    <DialogFooter>
-                        <Button onClick={handleManualResponseSubmit}>Add Response</Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-
           </div>
         </div>
       </div>
@@ -626,5 +625,3 @@ export function LiveAttackView({ operationId }: LiveAttackViewProps) {
    </>
   );
 }
-
-    

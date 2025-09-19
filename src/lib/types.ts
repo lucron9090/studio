@@ -7,6 +7,7 @@ export type TargetLLM = 'Gemini Flash' | 'Claude' | 'Grok' | 'ChatGPT';
 
 export type Operation = {
   id: string;
+  userId: string;
   name: string;
   maliciousGoal: string;
   targetLLM: TargetLLM;

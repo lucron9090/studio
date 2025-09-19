@@ -1,7 +1,8 @@
+
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { Archive, Settings, Swords, Bot } from 'lucide-react';
+import { Archive, Settings, Swords, Bot, LogOut, Loader } from 'lucide-react';
 
 import {
   Sidebar,
@@ -14,6 +15,17 @@ import {
 } from '@/components/ui/sidebar';
 import { Logo } from '@/components/icons/Logo';
 import { Separator } from '@/components/ui/separator';
+import { useAuth } from '@/contexts/AuthContext';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Skeleton } from './ui/skeleton';
 
 const menuItems = [
   { href: '/operations', label: 'Operations', icon: Swords },
@@ -23,17 +35,47 @@ const menuItems = [
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const { user, loading, signOut } = useAuth();
 
   return (
     <Sidebar>
       <SidebarHeader>
-        <div className="flex items-center gap-2">
-          <Logo className="size-8 text-sidebar-primary" />
-          <div className="flex flex-col">
-            <h2 className="text-lg font-semibold tracking-tight text-sidebar-primary">
-              Red Team OS
-            </h2>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Logo className="size-8 text-sidebar-primary" />
+            <div className="flex flex-col">
+              <h2 className="text-lg font-semibold tracking-tight text-sidebar-primary">
+                Red Team OS
+              </h2>
+            </div>
           </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              {loading ? (
+                <Skeleton className="size-8 rounded-full" />
+              ) : user ? (
+                <button>
+                  <Avatar className="size-8">
+                    <AvatarImage src={user.photoURL || ''} alt={user.displayName || ''} />
+                    <AvatarFallback>{user.displayName?.[0] || 'U'}</AvatarFallback>
+                  </Avatar>
+                </button>
+              ) : (
+                <div className="size-8 rounded-full bg-muted" />
+              )}
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>
+                <p className="font-medium">{user?.displayName}</p>
+                <p className="text-xs text-muted-foreground font-normal">{user?.email}</p>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={signOut}>
+                <LogOut className="mr-2" />
+                <span>Sign Out</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </SidebarHeader>
       <Separator />
