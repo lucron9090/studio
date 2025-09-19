@@ -81,9 +81,9 @@ export function LiveAttackView({ operationId }: LiveAttackViewProps) {
             if (conversation.length === 0) {
               const initialConversation: ConversationMessage[] = [
                   { id: 'msg1', author: 'system', content: 'Operation started.', timestamp: new Date().toISOString() },
-                  { id: 'msg2', author: 'operator', content: parsedData.initialPrompt, timestamp: new Date().toISOString() },
               ];
               setConversation(initialConversation);
+              setInput(parsedData.initialPrompt); // Pre-fill the input box
             }
         } catch (e) {
             console.error('Failed to parse operation data from sessionStorage', e);
@@ -626,3 +626,5 @@ export function LiveAttackView({ operationId }: LiveAttackViewProps) {
    </>
   );
 }
+
+    
