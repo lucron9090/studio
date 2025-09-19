@@ -1,3 +1,4 @@
+
 import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
 import { getFirestore, connectFirestoreEmulator, type Firestore } from 'firebase/firestore';
 import { getAuth, connectAuthEmulator, type Auth } from 'firebase/auth';
@@ -15,30 +16,17 @@ let app: FirebaseApp;
 let auth: Auth;
 let db: Firestore;
 
-if (process.env.NODE_ENV === 'development') {
-  // Use emulators in development
-  app = !getApps().length ? initializeApp({ projectId: 'demo-project' }) : getApp();
-  auth = getAuth(app);
-  db = getFirestore(app);
-  
-  // Check if emulators are already running to avoid re-connecting
-  // The host property is a private property, but it's a reliable way to check
-  // if the emulator is already connected.
-  // @ts-ignore
-  if (!auth.emulatorConfig) {
+app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+auth = getAuth(app);
+db = getFirestore(app);
+
+if (process.env.NODE_ENV === 'development' && typeof window === 'undefined') {
+  try {
     connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
-  }
-  // @ts-ignore
-  if (!db.INTERNAL.emulator) {
     connectFirestoreEmulator(db, 'localhost', 8080);
+  } catch (e) {
+    console.log('Emulators already running');
   }
-
-} else {
-  // Use live Firebase services in production
-  app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-  auth = getAuth(app);
-  db = getFirestore(app);
 }
-
 
 export { app, db, auth };
