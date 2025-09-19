@@ -3,7 +3,7 @@
 
 import type { Operation as FullOperation, ConversationMessage as FullConversationMessage } from '@/lib/types';
 import { useState, useRef, useOptimistic, useEffect, useTransition } from 'react';
-import { Send, Bot, FileText, Wand2, ShieldCheck, Info, Keyboard, ChevronLeft, Loader } from 'lucide-react';
+import { Send, Bot, FileText, Wand2, ShieldCheck, Info, Keyboard, ChevronLeft, Loader, ChevronsRightLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
@@ -70,6 +70,7 @@ export function LiveAttackView({ operationId }: LiveAttackViewProps) {
   
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<{ summary: string; breachPoints: string; suggestedImprovements: string } | null>(null);
+  const [isRightPanelCollapsed, setRightPanelCollapsed] = useState(false);
   
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
@@ -352,8 +353,8 @@ export function LiveAttackView({ operationId }: LiveAttackViewProps) {
         </div>
         <Badge variant={operation.status === 'active' ? 'default' : 'secondary'}>{operation.status}</Badge>
     </header>
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 md:p-6 flex-1 min-h-0">
-      <div className="md:col-span-2 flex flex-col bg-card rounded-lg border h-full">
+    <div className={cn("grid grid-cols-1 md:grid-cols-3 gap-4 p-4 md:p-6 flex-1 min-h-0", isRightPanelCollapsed && "md:grid-cols-[1fr_auto]")}>
+      <div className={cn("md:col-span-2 flex flex-col bg-card rounded-lg border h-full", isRightPanelCollapsed && "md:col-span-1")}>
         <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Live Conversation</CardTitle>
              <Dialog open={isWaitingForManualResponse} onOpenChange={setIsWaitingForManualResponse}>
@@ -527,99 +528,109 @@ export function LiveAttackView({ operationId }: LiveAttackViewProps) {
         </div>
       </div>
 
-      <div className="space-y-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>Operation Details</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4 text-sm">
-            <AIAssistedField
-                fieldName="Goal"
-                fieldValue={operation.maliciousGoal}
-                onSave={(newValue) => handleUpdateOperation('maliciousGoal', newValue)}
-                aiAction={async (instructions) => {
-                    const result = await suggestMaliciousGoal({ currentGoal: operation.maliciousGoal, instructions });
-                    return result;
-                }}
-                aiActionLabel="Suggest New Goal"
-                dialogTitle="Suggest New Malicious Goal"
-                dialogDescription="Refine or change the current operation's goal with AI."
-            />
-            <AIAssistedField
-                fieldName="Vector"
-                fieldValue={operation.attackVector}
-                onSave={(newValue) => handleUpdateOperation('attackVector', newValue)}
-                aiAction={async (instructions) => {
-                    const result = await regenerateAttackVector({ originalVector: operation.attackVector, instructions: instructions || '' });
-                    return { suggestion: result.regeneratedVector, reasoning: `AI has refined the vector based on your instructions.` };
-                }}
-                aiActionLabel="Regenerate Vector"
-                dialogTitle="Regenerate Attack Vector"
-                dialogDescription="Use AI to refine the current attack vector based on your instructions."
-            />
-            <AIAssistedField
-                fieldName="Target Persona"
-                fieldValue={operation.aiTargetPersona}
-                onSave={(newValue) => handleUpdateOperation('aiTargetPersona', newValue)}
-                aiAction={async (instructions) => {
-                    const result = await generateAITargetPersonaFromGoal({ maliciousGoal: operation.maliciousGoal, instructions });
-                    return result;
-                }}
-                aiActionLabel="Generate New Persona"
-                dialogTitle="Generate AI Target Persona"
-                dialogDescription="Generate a new vulnerable persona based on the operation's goal."
-            />
-
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>AI Analysis</CardTitle>
-          </CardHeader>
-          <CardContent>
-             <Dialog onOpenChange={(open) => !open && setAnalysisResult(null)}>
-              <DialogTrigger asChild>
-                <Button className="w-full" onClick={handleAnalyzeOperation} disabled={isAnalyzing || isPending || isWaitingForManualResponse}>
-                    {isAnalyzing ? 'Analyzing...' : <><FileText className="mr-2" /> Analyze Operation</>}
+      <div className={cn("space-y-4", isRightPanelCollapsed && "flex items-start")}>
+        <div className={cn("space-y-4 w-full", isRightPanelCollapsed && "hidden")}>
+            <Card>
+            <CardHeader className='flex-row items-center justify-between'>
+                <CardTitle>Operation Details</CardTitle>
+                 <Button variant="ghost" size="icon" onClick={() => setRightPanelCollapsed(prev => !prev)}>
+                    <ChevronsRightLeft className="size-4" />
                 </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-2xl">
-                <DialogHeader>
-                  <DialogTitle>Post-Operation Analysis</DialogTitle>
-                </DialogHeader>
-                <ScrollArea className="max-h-[60vh] pr-6">
-                    {isAnalyzing && !analysisResult && (
-                        <div className="space-y-4 py-4">
-                            <Skeleton className="h-4 w-1/4" />
-                            <Skeleton className="h-16 w-full" />
-                            <Skeleton className="h-4 w-1/4" />
-                            <Skeleton className="h-12 w-full" />
-                            <Skeleton className="h-4 w-1/4" />
-                            <Skeleton className="h-12 w-full" />
-                        </div>
-                    )}
-                    {analysisResult && (
-                        <div className="space-y-4 py-4 text-sm">
-                            <div>
-                                <h3 className="font-semibold mb-1">Summary</h3>
-                                <p className="text-muted-foreground whitespace-pre-wrap">{analysisResult.summary}</p>
+            </CardHeader>
+            <CardContent className="space-y-4 text-sm">
+                <AIAssistedField
+                    fieldName="Goal"
+                    fieldValue={operation.maliciousGoal}
+                    onSave={(newValue) => handleUpdateOperation('maliciousGoal', newValue)}
+                    aiAction={async (instructions) => {
+                        const result = await suggestMaliciousGoal({ currentGoal: operation.maliciousGoal, instructions });
+                        return result;
+                    }}
+                    aiActionLabel="Suggest New Goal"
+                    dialogTitle="Suggest New Malicious Goal"
+                    dialogDescription="Refine or change the current operation's goal with AI."
+                />
+                <AIAssistedField
+                    fieldName="Vector"
+                    fieldValue={operation.attackVector}
+                    onSave={(newValue) => handleUpdateOperation('attackVector', newValue)}
+                    aiAction={async (instructions) => {
+                        const result = await regenerateAttackVector({ originalVector: operation.attackVector, instructions: instructions || '' });
+                        return { suggestion: result.regeneratedVector, reasoning: `AI has refined the vector based on your instructions.` };
+                    }}
+                    aiActionLabel="Regenerate Vector"
+                    dialogTitle="Regenerate Attack Vector"
+                    dialogDescription="Use AI to refine the current attack vector based on your instructions."
+                />
+                <AIAssistedField
+                    fieldName="Target Persona"
+                    fieldValue={operation.aiTargetPersona}
+                    onSave={(newValue) => handleUpdateOperation('aiTargetPersona', newValue)}
+                    aiAction={async (instructions) => {
+                        const result = await generateAITargetPersonaFromGoal({ maliciousGoal: operation.maliciousGoal, instructions });
+                        return result;
+                    }}
+                    aiActionLabel="Generate New Persona"
+                    dialogTitle="Generate AI Target Persona"
+                    dialogDescription="Generate a new vulnerable persona based on the operation's goal."
+                />
+
+            </CardContent>
+            </Card>
+            <Card>
+            <CardHeader>
+                <CardTitle>AI Analysis</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <Dialog onOpenChange={(open) => !open && setAnalysisResult(null)}>
+                <DialogTrigger asChild>
+                    <Button className="w-full" onClick={handleAnalyzeOperation} disabled={isAnalyzing || isPending || isWaitingForManualResponse}>
+                        {isAnalyzing ? 'Analyzing...' : <><FileText className="mr-2" /> Analyze Operation</>}
+                    </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-2xl">
+                    <DialogHeader>
+                    <DialogTitle>Post-Operation Analysis</DialogTitle>
+                    </DialogHeader>
+                    <ScrollArea className="max-h-[60vh] pr-6">
+                        {isAnalyzing && !analysisResult && (
+                            <div className="space-y-4 py-4">
+                                <Skeleton className="h-4 w-1/4" />
+                                <Skeleton className="h-16 w-full" />
+                                <Skeleton className="h-4 w-1/4" />
+                                <Skeleton className="h-12 w-full" />
+                                <Skeleton className="h-4 w-1/4" />
+                                <Skeleton className="h-12 w-full" />
                             </div>
-                            <div>
-                                <h3 className="font-semibold mb-1">Key Breach Points</h3>
-                                <p className="text-muted-foreground whitespace-pre-wrap">{analysisResult.breachPoints}</p>
+                        )}
+                        {analysisResult && (
+                            <div className="space-y-4 py-4 text-sm">
+                                <div>
+                                    <h3 className="font-semibold mb-1">Summary</h3>
+                                    <p className="text-muted-foreground whitespace-pre-wrap">{analysisResult.summary}</p>
+                                </div>
+                                <div>
+                                    <h3 className="font-semibold mb-1">Key Breach Points</h3>
+                                    <p className="text-muted-foreground whitespace-pre-wrap">{analysisResult.breachPoints}</p>
+                                </div>
+                                <div>
+                                    <h3 className="font-semibold mb-1">Suggested Improvements</h3>
+                                    <p className="text-muted-foreground whitespace-pre-wrap">{analysisResult.suggestedImprovements}</p>
+                                </div>
                             </div>
-                            <div>
-                                <h3 className="font-semibold mb-1">Suggested Improvements</h3>
-                                <p className="text-muted-foreground whitespace-pre-wrap">{analysisResult.suggestedImprovements}</p>
-                            </div>
-                        </div>
-                    )}
-                </ScrollArea>
-              </DialogContent>
-            </Dialog>
-            <p className="text-xs text-muted-foreground mt-2 text-center">Generate a report on strategy effectiveness and suggested improvements.</p>
-          </CardContent>
-        </Card>
+                        )}
+                    </ScrollArea>
+                </DialogContent>
+                </Dialog>
+                <p className="text-xs text-muted-foreground mt-2 text-center">Generate a report on strategy effectiveness and suggested improvements.</p>
+            </CardContent>
+            </Card>
+        </div>
+        {isRightPanelCollapsed && (
+             <Button variant="ghost" size="icon" onClick={() => setRightPanelCollapsed(false)}>
+                <ChevronsRightLeft className="size-4" />
+            </Button>
+        )}
       </div>
     </div>
    </>
