@@ -5,7 +5,8 @@ import {
   connectFirestoreEmulator, 
   type Firestore,
   initializeFirestore,
-  enableIndexedDbPersistence 
+  persistentLocalCache,
+  memoryLocalCache 
 } from 'firebase/firestore';
 import { getAuth, connectAuthEmulator, type Auth } from 'firebase/auth';
 
@@ -18,6 +19,7 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
+<<<<<<< HEAD
 let app: FirebaseApp;
 let auth: Auth;
 let db: Firestore;
@@ -56,39 +58,49 @@ if (getApps().length === 0) {
   app = initializeApp(firebaseConfig);
   auth = getAuth(app);
   db = initializeFirestore(app, {
+=======
+function initializeServices() {
+  const isConfigured = getApps().length > 0;
+  const app = isConfigured ? getApp() : initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = initializeFirestore(app, {
+    localCache:
+      typeof window !== 'undefined'
+        ? persistentLocalCache({})
+        : memoryLocalCache({}),
+>>>>>>> aa2cd26 (it was already enabled)
     ignoreUndefinedProperties: true,
   });
 >>>>>>> 92303be (Unhandled Runtime Error)
 
-  enableIndexedDbPersistence(db).catch((err) => {
-    if (err.code == 'failed-precondition') {
-      console.warn(
-        'Multiple tabs open, persistence can only be enabled in one tab at a time.'
-      );
-    } else if (err.code == 'unimplemented') {
-      console.warn(
-        'The current browser does not support all of the features required to enable persistence.'
-      );
-    }
-  });
-
   if (process.env.NODE_ENV === 'development') {
-    try {
-      connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
-      connectFirestoreEmulator(db, 'localhost', 8080);
-    } catch (e) {
-      console.log('Emulators already running or failed to connect.');
+    if (!isConfigured) {
+      try {
+        connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
+        connectFirestoreEmulator(db, 'localhost', 8080);
+      } catch (e) {
+        console.log('Emulators already running or failed to connect.');
+      }
     }
   }
 <<<<<<< HEAD
 >>>>>>> 628f8e0 (Try fixing this error: `Unhandled Runtime Error: TypeError: undefined is)
 =======
 
+<<<<<<< HEAD
 } else {
   app = getApp();
   auth = getAuth(app);
   db = getFirestore(app);
 >>>>>>> 92303be (Unhandled Runtime Error)
+=======
+  return { app, auth, db };
+>>>>>>> aa2cd26 (it was already enabled)
 }
 
+function getFirebaseServices() {
+  return initializeServices();
+}
+
+const { app, auth, db } = getFirebaseServices();
 export { app, db, auth };

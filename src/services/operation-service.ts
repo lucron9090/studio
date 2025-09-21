@@ -12,6 +12,8 @@ import {
   orderBy,
   limit,
   getDocs,
+  deleteDoc,
+  writeBatch,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import type { Operation, ConversationMessage } from '@/lib/types';
@@ -36,19 +38,18 @@ export async function createOperation(userId: string, operationData: Omit<Operat
 }
 
 // Get all operations for a user
-export function getOperations(userId: string, callback: (operations: Operation[]) => void) {
+export async function getOperations(userId: string): Promise<Operation[]> {
   const q = query(collection(db, 'operations'), where('userId', '==', userId), orderBy('createdAt', 'desc'));
   
-  const unsubscribe = onSnapshot(q, (querySnapshot) => {
-    const operations: Operation[] = [];
-    querySnapshot.forEach((doc) => {
-      operations.push({ id: doc.id, ...doc.data() } as Operation);
-    });
-    callback(operations);
+  const querySnapshot = await getDocs(q);
+  const operations: Operation[] = [];
+  querySnapshot.forEach((doc) => {
+    operations.push({ id: doc.id, ...doc.data() } as Operation);
   });
-
-  return unsubscribe;
+  
+  return operations;
 }
+
 
 // Get a single operation
 export async function getOperation(operationId: string): Promise<Operation | null> {
@@ -96,4 +97,22 @@ export function getMessages(operationId: string, callback: (messages: Conversati
     });
 
     return unsubscribe;
+}
+
+
+// Delete an operation and all its messages
+export async function deleteOperation(operationId: string): Promise<void> {
+  const operationRef = doc(db, 'operations', operationId);
+  const messagesRef = collection(db, 'operations', operationId, 'messages');
+
+  // Delete all messages in the subcollection
+  const messagesSnapshot = await getDocs(messagesRef);
+  const batch = writeBatch(db);
+  messagesSnapshot.forEach(doc => {
+    batch.delete(doc.ref);
+  });
+  await batch.commit();
+
+  // Delete the operation document
+  await deleteDoc(operationRef);
 }
