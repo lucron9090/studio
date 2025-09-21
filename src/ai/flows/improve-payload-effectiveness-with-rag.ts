@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview Implements Retrieval-Augmented Generation (RAG) to improve payload effectiveness.
@@ -33,9 +34,14 @@ export async function improvePayloadEffectivenessWithRAG(
   return improvePayloadEffectivenessWithRAGFlow(input);
 }
 
+const RagPromptInputSchema = z.object({
+    prompt: z.string().describe('The original prompt to be augmented.'),
+    successfulPayloads: z.array(z.string()).describe('A list of successful payloads to learn from.'),
+});
+
 const improvePayloadEffectivenessWithRAGPrompt = ai.definePrompt({
   name: 'improvePayloadEffectivenessWithRAGPrompt',
-  input: {schema: ImprovePayloadEffectivenessWithRAGInputSchema},
+  input: {schema: RagPromptInputSchema},
   output: {schema: ImprovePayloadEffectivenessWithRAGOutputSchema},
   prompt: `You are an expert prompt engineer. Augment the given prompt with the following successful payloads to improve its effectiveness.
 
