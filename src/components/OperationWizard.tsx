@@ -204,8 +204,8 @@ export function OperationWizard() {
             originalVector,
             instructions: regenerationInstructions,
         });
-        if (result.regeneratedVector) {
-            form.setValue('attackVector', result.regeneratedVector, { shouldValidate: true });
+        if (result.suggestion) {
+            form.setValue('attackVector', result.suggestion, { shouldValidate: true });
             
             toast({ title: 'Attack Vector Regenerated', description: 'Your attack vector has been updated by the AI.' });
             setRegenerateDialogOpen(false);
