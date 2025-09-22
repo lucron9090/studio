@@ -190,7 +190,7 @@ export function OperationsClientPage({ initialOperations }: { initialOperations:
                 </TableCell>
                 <TableCell>{op.createdAt ? format(new Date(op.createdAt), 'PPpp') : 'N/A'}</TableCell>
                 <TableCell className="text-right">
-                    <AlertDialog onOpenChange={(e) => e.stopPropagation()}>
+                    <AlertDialog>
                         <AlertDialogTrigger asChild>
                             <Button variant="ghost" size="icon" onClick={(e) => e.stopPropagation()}>
                                 <Trash2 className="size-4" />
