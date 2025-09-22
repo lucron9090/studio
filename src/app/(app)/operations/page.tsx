@@ -1,4 +1,6 @@
 
+'use client';
+
 import { Plus, Zap } from 'lucide-react';
 import Link from 'next/link';
 
@@ -12,7 +14,7 @@ import {
 import { OperationsTable, QuickStartButton } from './operations-client-page';
 
 
-export default async function OperationsPage() {
+export default function OperationsPage() {
 
   return (
     <div className="container mx-auto py-8 px-4 md:px-6">
@@ -33,7 +35,7 @@ export default async function OperationsPage() {
           <CardTitle>All Operations</CardTitle>
         </CardHeader>
         <CardContent>
-            <OperationsTable initialOperations={[]} />
+            <OperationsTable />
         </CardContent>
       </Card>
     </div>
