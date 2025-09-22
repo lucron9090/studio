@@ -42,7 +42,7 @@ type OperationClient = Omit<Operation, 'createdAt' | 'updatedAt'> & {
 };
 
 
-function QuickStartButton() {
+export function QuickStartButton() {
   const router = useRouter();
   const { user } = useAuth();
   const { toast } = useToast();
@@ -86,7 +86,7 @@ function QuickStartButton() {
 }
 
 
-function OperationsTable({ initialOperations = [] }: { initialOperations: OperationClient[] }) {
+export function OperationsTable({ initialOperations = [] }: { initialOperations: OperationClient[] }) {
   const router = useRouter();
   const { user } = useAuth();
   const [operations, setOperations] = useState<OperationClient[]>(initialOperations);
@@ -244,5 +244,3 @@ function OperationsTable({ initialOperations = [] }: { initialOperations: Operat
       </Table>
   );
 }
-
-export const OperationsClientPage = Object.assign(OperationsTable, { QuickStartButton });
