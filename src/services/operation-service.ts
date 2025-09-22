@@ -18,26 +18,25 @@ import {
 import { db } from '@/lib/firebase/config';
 import type { Operation, ConversationMessage } from '@/lib/types';
 
+// Helper function to remove undefined properties from an object
+const removeUndefined = (obj: Record<string, any>) => {
+  const newObj: Record<string, any> = {};
+  Object.keys(obj).forEach((key) => {
+    if (obj[key] !== undefined) {
+      newObj[key] = obj[key];
+    }
+  });
+  return newObj;
+};
+
 
 // Create a new operation for a user
 export async function createOperation(userId: string, operationData: Omit<Operation, 'id' | 'createdAt' | 'updatedAt' | 'userId'>): Promise<string> {
   
-  const dataToWrite: Omit<Operation, 'id' | 'createdAt' | 'updatedAt' | 'userId'> = {
-    name: operationData.name,
-    maliciousGoal: operationData.maliciousGoal,
-    targetLLM: operationData.targetLLM,
-    aiTargetPersona: operationData.aiTargetPersona,
-    attackVector: operationData.attackVector,
-    initialPrompt: operationData.initialPrompt,
-    status: operationData.status,
-  };
+  const cleanedOperationData = removeUndefined(operationData);
 
-  if (operationData.targetDescription) {
-    dataToWrite.targetDescription = operationData.targetDescription;
-  }
-  
   const docRef = await addDoc(collection(db, 'operations'), {
-    ...dataToWrite,
+    ...cleanedOperationData,
     userId,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
@@ -81,8 +80,9 @@ export async function getOperation(operationId: string): Promise<Operation | nul
 // Update an operation
 export async function updateOperation(operationId: string, updates: Partial<Operation>) {
     const docRef = doc(db, 'operations', operationId);
+    const cleanedUpdates = removeUndefined(updates);
     await updateDoc(docRef, {
-        ...updates,
+        ...cleanedUpdates,
         updatedAt: serverTimestamp()
     });
 }
