@@ -11,6 +11,7 @@ export type Operation = {
   name: string;
   maliciousGoal: string;
   targetLLM: TargetLLM;
+  targetDescription?: string;
   aiTargetPersona: string;
   attackVector: string;
   initialPrompt: string;
