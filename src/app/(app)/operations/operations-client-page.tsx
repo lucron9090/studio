@@ -4,7 +4,7 @@
 import { Plus, Zap, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { createOperation, deleteOperation } from '@/services/operation-service';
 import type { Operation } from '@/lib/types';
@@ -22,7 +22,6 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   AlertDialog,
@@ -43,38 +42,15 @@ type OperationClient = Omit<Operation, 'createdAt' | 'updatedAt'> & {
 };
 
 
-export function OperationsClientPage({ initialOperations }: { initialOperations: OperationClient[] }) {
+function QuickStartButton() {
   const router = useRouter();
   const { user } = useAuth();
-  const [operations, setOperations] = useState<OperationClient[]>(initialOperations);
-  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-
-  useEffect(() => {
-    setLoading(initialOperations.length === 0);
-    if (user?.uid) {
-      const q = query(collection(db, 'operations'), where('userId', '==', user.uid), orderBy('createdAt', 'desc'));
-      const unsubscribe = onSnapshot(q, (snapshot) => {
-        const ops = snapshot.docs.map(doc => {
-            const data = doc.data();
-            return {
-                id: doc.id,
-                ...data,
-                createdAt: data.createdAt?.toDate().toISOString() || new Date().toISOString(),
-                updatedAt: data.updatedAt?.toDate().toISOString() || new Date().toISOString(),
-            }
-        }) as OperationClient[];
-        setOperations(ops);
-        setLoading(false);
-      });
-      return () => unsubscribe();
-    } else {
-        setLoading(false);
-    }
-  }, [user?.uid, initialOperations.length]);
+  const [isCreating, setIsCreating] = useState(false);
 
   const handleQuickStart = async () => {
     if (!user) return;
+    setIsCreating(true);
     
     const quickStartOperation: Omit<Operation, 'id' | 'createdAt' | 'updatedAt' | 'userId' > = {
       name: 'Quick Start: Data Exfiltration Test',
@@ -96,8 +72,60 @@ export function OperationsClientPage({ initialOperations }: { initialOperations:
         description: e instanceof Error ? e.message : String(e),
         variant: "destructive"
       })
+    } finally {
+      setIsCreating(false);
     }
   };
+
+  return (
+    <Button onClick={handleQuickStart} disabled={isCreating}>
+      <Zap className="mr-2" />
+      {isCreating ? 'Starting...' : 'Quick Start'}
+    </Button>
+  );
+}
+
+
+function OperationsTable({ initialOperations = [] }: { initialOperations: OperationClient[] }) {
+  const router = useRouter();
+  const { user } = useAuth();
+  const [operations, setOperations] = useState<OperationClient[]>(initialOperations);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (!user?.uid) {
+      setLoading(false);
+      return;
+    };
+    
+    setLoading(true);
+    const q = query(collection(db, 'operations'), where('userId', '==', user.uid), orderBy('createdAt', 'desc'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const ops = snapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+              id: doc.id,
+              ...data,
+              createdAt: data.createdAt?.toDate().toISOString() || new Date().toISOString(),
+              updatedAt: data.updatedAt?.toDate().toISOString() || new Date().toISOString(),
+          }
+      }) as OperationClient[];
+      setOperations(ops);
+      setLoading(false);
+    }, (error) => {
+      console.error("Error fetching operations: ", error);
+      toast({
+        title: "Error Fetching Operations",
+        description: "Could not load operations. Please check your connection and try again.",
+        variant: "destructive",
+      });
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+
+  }, [user?.uid, toast]);
 
   const handleDelete = async (operationId: string) => {
     try {
@@ -120,9 +148,7 @@ export function OperationsClientPage({ initialOperations }: { initialOperations:
     router.push(`/operations/${opId}`);
   };
 
-  // Re-enable quick start button on the client
-  if (loading && initialOperations.length === 0) {
-    // Show skeleton if we are truly loading for the first time
+  if (loading) {
     return (
        <Table>
         <TableHeader>
@@ -141,7 +167,7 @@ export function OperationsClientPage({ initialOperations }: { initialOperations:
               <TableCell><Skeleton className="h-5 w-24" /></TableCell>
               <TableCell><Skeleton className="h-6 w-20 rounded-full" /></TableCell>
               <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-              <TableCell><Skeleton className="h-8 w-20 float-right" /></TableCell>
+              <TableCell className="text-right"><Skeleton className="h-8 w-8" /></TableCell>
             </TableRow>
           ))}
         </TableBody>
@@ -218,3 +244,5 @@ export function OperationsClientPage({ initialOperations }: { initialOperations:
       </Table>
   );
 }
+
+export const OperationsClientPage = Object.assign(OperationsTable, { QuickStartButton });
