@@ -84,8 +84,9 @@ if (typeof window !== 'undefined' && !getApps().length) {
   });
 >>>>>>> 92303be (Unhandled Runtime Error)
 
-  if (process.env.NODE_ENV === 'development') {
-    console.log('Connecting to emulators');
+  // Only connect to emulators if we are running on localhost
+  if (window.location.hostname === 'localhost') {
+    console.log('Connecting to local Firebase emulators');
     connectFirestoreEmulator(db, 'localhost', 8080);
     connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
   }
@@ -108,6 +109,7 @@ if (typeof window !== 'undefined' && !getApps().length) {
   app = getApp();
   auth = getAuth(app);
   db = getFirestore(app);
+<<<<<<< HEAD
 >>>>>>> 0adf757 (pressing signin:This site can’t be reached)
 }
 
@@ -116,6 +118,13 @@ if (!getApps().length) {
     app = initializeApp(firebaseConfig);
     auth = getAuth(app);
     db = getFirestore(app);
+=======
+} else {
+  // This is a server-only initialization for things like server components
+  app = initializeApp(firebaseConfig);
+  auth = getAuth(app);
+  db = getFirestore(app);
+>>>>>>> e2ad999 (it fails.. sign in at https://6000-firebase-studio-1757791707150.cluster)
 }
 
 
