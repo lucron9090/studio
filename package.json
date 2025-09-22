@@ -19,6 +19,7 @@
   "dependencies": {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
     "@genkit-ai/googleai": "^1.14.1",
 <<<<<<< HEAD
     "@genkit-ai/vertexai": "^1.14.1",
@@ -28,6 +29,9 @@
     "@genkit-ai/googleai": "^1.14.0",
 >>>>>>> db0b8e4 (reinitliaize the build stack and dependencies using latest versions)
 =======
+=======
+    "@genkit-ai/firebase": "1.14.0",
+>>>>>>> da66106 (The app isn't starting. Please investigate what could be wrong based on)
     "@genkit-ai/googleai": "1.14.0",
 >>>>>>> dae975d (The app isn't starting. Please investigate what could be wrong based on)
     "@hookform/resolvers": "^4.1.3",
