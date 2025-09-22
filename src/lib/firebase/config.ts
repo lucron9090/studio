@@ -31,6 +31,7 @@ let db: Firestore;
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 const useEmulators = process.env.FIREBASE_USE_EMULATORS === 'true';
 
 if (useEmulators) {
@@ -127,38 +128,42 @@ if (!getApps().length) {
   db = getFirestore(app);
 >>>>>>> e2ad999 (it fails.. sign in at https://6000-firebase-studio-1757791707150.cluster)
 =======
+=======
+
+>>>>>>> 04ede5f (Fast Refresh] rebuilding)
 if (typeof window !== 'undefined') {
   // Client-side initialization
-  if (!getApps().length) {
+  if (getApps().length === 0) {
     app = initializeApp(firebaseConfig);
+    db = getFirestore(app);
     auth = getAuth(app);
-    db = initializeFirestore(app, {
-      localCache: persistentLocalCache({}),
-      ignoreUndefinedProperties: true,
-    });
-    
-    if (window.location.hostname === 'localhost') {
+  } else {
+    app = getApp();
+    db = getFirestore(app);
+    auth = getAuth(app);
+  }
+
+  if (window.location.hostname === 'localhost') {
       console.log('Connecting to local Firebase emulators');
       connectFirestoreEmulator(db, 'localhost', 8080);
       connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
-    }
-  } else {
-    app = getApp();
-    auth = getAuth(app);
-    db = getFirestore(app);
   }
 } else {
   // Server-side initialization
-  if (!getApps().length) {
+  if (getApps().length === 0) {
     app = initializeApp(firebaseConfig);
   } else {
     app = getApp();
   }
   auth = getAuth(app);
+<<<<<<< HEAD
   db = initializeFirestore(app, {
     ignoreUndefinedProperties: true,
   });
 >>>>>>> d417b33 (as soon as i click launch:Ready in 2.9s)
+=======
+  db = getFirestore(app);
+>>>>>>> 04ede5f (Fast Refresh] rebuilding)
 }
 
 export { app, db, auth };
