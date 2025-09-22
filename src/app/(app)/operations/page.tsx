@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { OperationsClientPage } from './operations-client-page';
+import { OperationsTable, QuickStartButton } from './operations-client-page';
 
 
 export default async function OperationsPage() {
@@ -19,7 +19,7 @@ export default async function OperationsPage() {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold tracking-tight">Operations</h1>
         <div className="flex gap-2">
-           <OperationsClientPage.QuickStartButton />
+           <QuickStartButton />
           <Button asChild variant="outline">
             <Link href="/operations/new">
               <Plus className="mr-2" />
@@ -33,7 +33,7 @@ export default async function OperationsPage() {
           <CardTitle>All Operations</CardTitle>
         </CardHeader>
         <CardContent>
-            <OperationsClientPage initialOperations={[]} />
+            <OperationsTable initialOperations={[]} />
         </CardContent>
       </Card>
     </div>
