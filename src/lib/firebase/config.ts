@@ -20,10 +20,14 @@ const firebaseConfig = {
 };
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 0adf757 (pressing signin:This site can’t be reached)
 let app: FirebaseApp;
 let auth: Auth;
 let db: Firestore;
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 const useEmulators = process.env.FIREBASE_USE_EMULATORS === 'true';
@@ -69,20 +73,23 @@ function initializeServices() {
         ? persistentLocalCache({})
         : memoryLocalCache({}),
 >>>>>>> aa2cd26 (it was already enabled)
+=======
+if (typeof window !== 'undefined' && !getApps().length) {
+  app = initializeApp(firebaseConfig);
+  auth = getAuth(app);
+  db = initializeFirestore(app, {
+    localCache: persistentLocalCache({}),
+>>>>>>> 0adf757 (pressing signin:This site can’t be reached)
     ignoreUndefinedProperties: true,
   });
 >>>>>>> 92303be (Unhandled Runtime Error)
 
   if (process.env.NODE_ENV === 'development') {
-    if (!isConfigured) {
-      try {
-        connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
-        connectFirestoreEmulator(db, 'localhost', 8080);
-      } catch (e) {
-        console.log('Emulators already running or failed to connect.');
-      }
-    }
+    console.log('Connecting to emulators');
+    connectFirestoreEmulator(db, 'localhost', 8080);
+    connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
   }
+<<<<<<< HEAD
 <<<<<<< HEAD
 >>>>>>> 628f8e0 (Try fixing this error: `Unhandled Runtime Error: TypeError: undefined is)
 =======
@@ -96,11 +103,20 @@ function initializeServices() {
 =======
   return { app, auth, db };
 >>>>>>> aa2cd26 (it was already enabled)
+=======
+} else if (getApps().length) {
+  app = getApp();
+  auth = getAuth(app);
+  db = getFirestore(app);
+>>>>>>> 0adf757 (pressing signin:This site can’t be reached)
 }
 
-function getFirebaseServices() {
-  return initializeServices();
+// This is a server-only initialization for things like server components
+if (!getApps().length) {
+    app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    db = getFirestore(app);
 }
 
-const { app, auth, db } = getFirebaseServices();
+
 export { app, db, auth };
