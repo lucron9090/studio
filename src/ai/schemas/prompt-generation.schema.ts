@@ -7,5 +7,5 @@ export const GenerateInitialPromptsInputSchema = z.object({
 });
 
 export const GenerateInitialPromptsOutputSchema = z.object({
-  prompts: z.array(z.string()).describe('An array of three generated prompts.'),
+  prompts: z.array(z.string()).length(3).describe('An array of three generated prompts.'),
 });

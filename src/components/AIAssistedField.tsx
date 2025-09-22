@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Wand2, Pencil } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -32,7 +32,7 @@ type AIAssistedFieldProps = {
   className?: string;
 };
 
-export function AIAssistedField({
+export const AIAssistedField = React.memo(function AIAssistedField({
   fieldName,
   fieldValue,
   onSave,
@@ -195,4 +195,4 @@ export function AIAssistedField({
       )}
     </div>
   );
-}
+});
