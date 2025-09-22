@@ -19,35 +19,35 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-function initializeServices() {
-  const isConfigured = getApps().length > 0;
-  const app = isConfigured ? getApp() : initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = initializeFirestore(app, {
-    localCache:
-      typeof window !== 'undefined'
-        ? persistentLocalCache({})
-        : memoryLocalCache({}),
+let app: FirebaseApp;
+let auth: Auth;
+let db: Firestore;
+
+if (typeof window !== 'undefined' && !getApps().length) {
+  app = initializeApp(firebaseConfig);
+  auth = getAuth(app);
+  db = initializeFirestore(app, {
+    localCache: persistentLocalCache({}),
     ignoreUndefinedProperties: true,
   });
 
   if (process.env.NODE_ENV === 'development') {
-    if (!isConfigured) {
-      try {
-        connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
-        connectFirestoreEmulator(db, 'localhost', 8080);
-      } catch (e) {
-        console.log('Emulators already running or failed to connect.');
-      }
-    }
+    console.log('Connecting to emulators');
+    connectFirestoreEmulator(db, 'localhost', 8080);
+    connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
   }
-
-  return { app, auth, db };
+} else if (getApps().length) {
+  app = getApp();
+  auth = getAuth(app);
+  db = getFirestore(app);
 }
 
-function getFirebaseServices() {
-  return initializeServices();
+// This is a server-only initialization for things like server components
+if (!getApps().length) {
+    app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    db = getFirestore(app);
 }
 
-const { app, auth, db } = getFirebaseServices();
+
 export { app, db, auth };
