@@ -22,9 +22,18 @@ import type { Operation, ConversationMessage } from '@/lib/types';
 // Create a new operation for a user
 export async function createOperation(userId: string, operationData: Omit<Operation, 'id' | 'createdAt' | 'updatedAt' | 'userId'>): Promise<string> {
   
-  const dataToWrite = { ...operationData };
-  if (dataToWrite.targetDescription === undefined) {
-    delete dataToWrite.targetDescription;
+  const dataToWrite: Omit<Operation, 'id' | 'createdAt' | 'updatedAt' | 'userId'> = {
+    name: operationData.name,
+    maliciousGoal: operationData.maliciousGoal,
+    targetLLM: operationData.targetLLM,
+    aiTargetPersona: operationData.aiTargetPersona,
+    attackVector: operationData.attackVector,
+    initialPrompt: operationData.initialPrompt,
+    status: operationData.status,
+  };
+
+  if (operationData.targetDescription) {
+    dataToWrite.targetDescription = operationData.targetDescription;
   }
   
   const docRef = await addDoc(collection(db, 'operations'), {

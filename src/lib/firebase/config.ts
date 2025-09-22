@@ -23,30 +23,37 @@ let app: FirebaseApp;
 let auth: Auth;
 let db: Firestore;
 
-if (typeof window !== 'undefined' && !getApps().length) {
-  app = initializeApp(firebaseConfig);
+if (typeof window !== 'undefined') {
+  // Client-side initialization
+  if (!getApps().length) {
+    app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    db = initializeFirestore(app, {
+      localCache: persistentLocalCache({}),
+      ignoreUndefinedProperties: true,
+    });
+    
+    if (window.location.hostname === 'localhost') {
+      console.log('Connecting to local Firebase emulators');
+      connectFirestoreEmulator(db, 'localhost', 8080);
+      connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
+    }
+  } else {
+    app = getApp();
+    auth = getAuth(app);
+    db = getFirestore(app);
+  }
+} else {
+  // Server-side initialization
+  if (!getApps().length) {
+    app = initializeApp(firebaseConfig);
+  } else {
+    app = getApp();
+  }
   auth = getAuth(app);
   db = initializeFirestore(app, {
-    localCache: persistentLocalCache({}),
     ignoreUndefinedProperties: true,
   });
-
-  // Only connect to emulators if we are running on localhost
-  if (window.location.hostname === 'localhost') {
-    console.log('Connecting to local Firebase emulators');
-    connectFirestoreEmulator(db, 'localhost', 8080);
-    connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
-  }
-} else if (getApps().length) {
-  app = getApp();
-  auth = getAuth(app);
-  db = getFirestore(app);
-} else {
-  // This is a server-only initialization for things like server components
-  app = initializeApp(firebaseConfig);
-  auth = getAuth(app);
-  db = getFirestore(app);
 }
-
 
 export { app, db, auth };
