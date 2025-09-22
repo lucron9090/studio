@@ -3,7 +3,7 @@
 
 import type { Operation as FullOperation, ConversationMessage as FullConversationMessage } from '@/lib/types';
 import React, { useState, useRef, useOptimistic, useEffect, useTransition, useCallback } from 'react';
-import { Send, Bot, FileText, Wand2, ShieldCheck, Info, Keyboard, ChevronLeft, Loader, ChevronsRightLeft } from 'lucide-react';
+import { Send, Bot, FileText, Wand2, ShieldCheck, Keyboard, ChevronLeft, Loader, ChevronsRightLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
@@ -22,10 +22,10 @@ import {
   DialogClose,
 } from "@/components/ui/dialog"
 import { Skeleton } from './ui/skeleton';
-import { simulateTargetResponse } from '@/ai/flows/simulate-target-response';
-import { suggestOptimalFollowUpPrompt } from '@/ai/flows/suggest-optimal-follow-up-prompt';
-import { analyzeOperation } from '@/ai/flows/analyze-operation-and-suggest-improvements';
-import { Alert, AlertDescription, AlertTitle } from './ui/alert';
+import { simulateTargetResponse, SimulateTargetResponseOutput } from '@/ai/flows/simulate-target-response';
+import { suggestOptimalFollowUpPrompt, SuggestOptimalFollowUpPromptOutput } from '@/ai/flows/suggest-optimal-follow-up-prompt';
+import { analyzeOperation, AnalyzeOperationOutput } from '@/ai/flows/analyze-operation-and-suggest-improvements';
+import { Alert, AlertDescription } from './ui/alert';
 import { Switch } from './ui/switch';
 import { Label } from './ui/label';
 import Link from 'next/link';
@@ -63,10 +63,10 @@ export const LiveAttackView = React.memo(function LiveAttackView({ operationId }
   const [manualResponse, setManualResponse] = useState('');
 
   const [isSuggesting, setIsSuggesting] = useState(false);
-  const [suggestion, setSuggestion] = useState<{ suggestedPrompt: string; reasoning: string } | null>(null);
+  const [suggestion, setSuggestion] = useState<SuggestOptimalFollowUpPromptOutput | null>(null);
   
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState<{ summary: string; breachPoints: string; suggestedImprovements: string } | null>(null);
+  const [analysisResult, setAnalysisResult] = useState<AnalyzeOperationOutput | null>(null);
   const [isRightPanelCollapsed, setRightPanelCollapsed] = useState(false);
   
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -142,7 +142,7 @@ export const LiveAttackView = React.memo(function LiveAttackView({ operationId }
         .join('\n');
   
       try {
-        const response = await simulateTargetResponse({
+        const response : SimulateTargetResponseOutput = await simulateTargetResponse({
           conversationHistory: currentConversationHistory,
           maliciousGoal: operation.maliciousGoal,
           aiTargetPersona: operation.aiTargetPersona,
@@ -193,7 +193,7 @@ export const LiveAttackView = React.memo(function LiveAttackView({ operationId }
           .join('\n');
         const targetResponse = conversation.filter(m => m.author === 'target').pop()?.content || '';
 
-        const result = await suggestOptimalFollowUpPrompt({
+        const result: SuggestOptimalFollowUpPromptOutput = await suggestOptimalFollowUpPrompt({
             conversationHistory,
             targetResponse,
             maliciousGoal: operation.maliciousGoal,
@@ -221,7 +221,7 @@ export const LiveAttackView = React.memo(function LiveAttackView({ operationId }
           .map(m => `${m.author}: ${m.content}`)
           .join('\n');
 
-        const result = await analyzeOperation({
+        const result: AnalyzeOperationOutput = await analyzeOperation({
             operationSummary: `Goal: ${operation.maliciousGoal}`,
             conversationHistory,
             attackVector: operation.attackVector,
@@ -478,7 +478,7 @@ export const LiveAttackView = React.memo(function LiveAttackView({ operationId }
                     onSave={(newValue) => handleUpdateOperation('attackVector', newValue)}
                     aiAction={async (instructions) => {
                         const result = await regenerateAttackVector({ originalVector: operation.attackVector, instructions: instructions || '' });
-                        return { suggestion: result.regeneratedVector, reasoning: `AI has refined the vector based on your instructions.` };
+                        return { suggestion: result.suggestion, reasoning: result.reasoning };
                     }}
                     aiActionLabel="Regenerate Vector"
                     dialogTitle="Regenerate Attack Vector"

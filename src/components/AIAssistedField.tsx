@@ -21,11 +21,16 @@ import { Skeleton } from './ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from './ui/scroll-area';
 
+type Suggestion = {
+  suggestion: string;
+  reasoning?: string;
+};
+
 type AIAssistedFieldProps = {
   fieldName: string;
   fieldValue: string;
   onSave: (newValue: string) => void;
-  aiAction: (instructions?: string) => Promise<{ suggestion: string; reasoning?: string }>;
+  aiAction: (instructions?: string) => Promise<Suggestion>;
   aiActionLabel: string;
   dialogTitle: string;
   dialogDescription: string;
@@ -46,7 +51,7 @@ export const AIAssistedField = React.memo(function AIAssistedField({
   const [isGenerating, setIsGenerating] = useState(false);
   const [isDialogOpen, setDialogOpen] = useState(false);
   const [instructions, setInstructions] = useState('');
-  const [suggestion, setSuggestion] = useState<{ suggestion: string; reasoning?: string } | null>(null);
+  const [suggestion, setSuggestion] = useState<Suggestion | null>(null);
   const [currentValue, setCurrentValue] = useState(fieldValue);
   const { toast } = useToast();
 

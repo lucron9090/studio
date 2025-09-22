@@ -19,7 +19,8 @@ const RegenerateAttackVectorInputSchema = z.object({
 export type RegenerateAttackVectorInput = z.infer<typeof RegenerateAttackVectorInputSchema>;
 
 const RegenerateAttackVectorOutputSchema = z.object({
-  regeneratedVector: z.string().describe('The new, AI-regenerated attack vector.'),
+  suggestion: z.string().describe('The new, AI-regenerated attack vector.'),
+  reasoning: z.string().describe('The reasoning for the new vector.'),
 });
 export type RegenerateAttackVectorOutput = z.infer<typeof RegenerateAttackVectorOutputSchema>;
 
@@ -33,7 +34,7 @@ const regenerateAttackVectorPrompt = ai.definePrompt({
   output: {schema: RegenerateAttackVectorOutputSchema},
   prompt: `You are an expert AI red team strategist specializing in refining attack vectors.
 
-Based on the original attack vector and the user's instructions, generate a new, improved attack vector.
+Based on the original attack vector and the user's instructions, generate a new, improved attack vector and a brief reasoning for the change.
 The new vector should incorporate the user's feedback while maintaining its strategic integrity.
 
 Original Attack Vector:
@@ -42,7 +43,7 @@ Original Attack Vector:
 User Instructions:
 "{{{instructions}}}"
 
-Your response MUST be a JSON object with a single key "regeneratedVector" containing the new attack vector as a string.
+Your response MUST be a JSON object with two keys "suggestion" (the new vector) and "reasoning".
 Do not include any preamble or explanation. Just provide the raw JSON.
   `,
 });
