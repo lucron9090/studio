@@ -17,6 +17,10 @@ export const ai = genkit({
   }
 =======
   plugins: [googleAI({apiKey: process.env.GEMINI_API_KEY})],
+<<<<<<< HEAD
   model: 'googleai/gemini-2.5-flash',
 >>>>>>> 0608583 (still no response from target ai.)
+=======
+  model: 'googleai/gemini-1.5-flash-latest',
+>>>>>>> 446abf3 ('ve analyzed the project files and identified several areas where we can)
 });

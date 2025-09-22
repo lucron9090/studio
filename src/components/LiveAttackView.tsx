@@ -2,7 +2,7 @@
 'use client';
 
 import type { Operation as FullOperation, ConversationMessage as FullConversationMessage } from '@/lib/types';
-import { useState, useRef, useOptimistic, useEffect, useTransition } from 'react';
+import React, { useState, useRef, useOptimistic, useEffect, useTransition, useCallback } from 'react';
 import { Send, Bot, FileText, Wand2, ShieldCheck, Info, Keyboard, ChevronLeft, Loader, ChevronsRightLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from './ui/button';
@@ -51,7 +51,7 @@ type LiveAttackViewProps = {
   operationId: string;
 };
 
-export function LiveAttackView({ operationId }: LiveAttackViewProps) {
+export const LiveAttackView = React.memo(function LiveAttackView({ operationId }: LiveAttackViewProps) {
   const { user } = useAuth();
   const [operation, setOperation] = useState<Operation | null>(null);
   const [conversation, setConversation] = useState<ConversationMessage[]>([]);
@@ -111,16 +111,16 @@ export function LiveAttackView({ operationId }: LiveAttackViewProps) {
     }
   }, [optimisticConversation]);
 
-  const handleUpdateOperation = (field: keyof Operation, value: string) => {
+  const handleUpdateOperation = useCallback((field: keyof Operation, value: string) => {
     if (operation) {
         const updatedOperation = { ...operation, [field]: value };
         setOperation(updatedOperation);
         updateOperation(operationId, { [field]: value });
     }
-  }
+  }, [operation, operationId]);
 
 
-  const handleSendMessage = async () => {
+  const handleSendMessage = useCallback(async () => {
     if (!input.trim() || isPending || !operation) return;
   
     const operatorMessage: Omit<FullConversationMessage, 'id' | 'timestamp'> = {
@@ -172,9 +172,9 @@ export function LiveAttackView({ operationId }: LiveAttackViewProps) {
         await addMessage(operationId, systemErrorMessage);
       }
     });
-  };
+  }, [input, isPending, operation, operationId, isManualMode, conversation, toast]);
 
-  const handleManualResponseSubmit = async () => {
+  const handleManualResponseSubmit = useCallback(async () => {
     if (!manualResponse.trim()) return;
     
     const targetResponse: Omit<FullConversationMessage, 'id' | 'timestamp'> = {
@@ -185,9 +185,9 @@ export function LiveAttackView({ operationId }: LiveAttackViewProps) {
     await addMessage(operationId, targetResponse);
     setManualResponse('');
     setIsWaitingForManualResponse(false);
-  }
+  }, [manualResponse, operationId]);
 
-  const handleSuggestFollowUp = async () => {
+  const handleSuggestFollowUp = useCallback(async () => {
     if (!operation) return;
     setIsSuggesting(true);
     setSuggestion(null);
@@ -214,6 +214,7 @@ export function LiveAttackView({ operationId }: LiveAttackViewProps) {
     } finally {
         setIsSuggesting(false);
     }
+<<<<<<< HEAD
 =======
     addOptimisticMessage(targetResponse);
     setConversation(prev => [...prev, targetResponse]);
@@ -260,8 +261,11 @@ export function LiveAttackView({ operationId }: LiveAttackViewProps) {
     }
 >>>>>>> dae975d (The app isn't starting. Please investigate what could be wrong based on)
   }
+=======
+  }, [operation, conversation, toast]);
+>>>>>>> 446abf3 ('ve analyzed the project files and identified several areas where we can)
   
-  const handleAnalyzeOperation = async () => {
+  const handleAnalyzeOperation = useCallback(async () => {
     if (!operation) return;
     setIsAnalyzing(true);
 <<<<<<< HEAD
@@ -313,20 +317,24 @@ export function LiveAttackView({ operationId }: LiveAttackViewProps) {
     } finally {
         setIsAnalyzing(false);
     }
+<<<<<<< HEAD
 =======
     toast({ variant: 'destructive', title: 'Error', description: 'AI features are temporarily disabled.' });
     setIsAnalyzing(false);
 >>>>>>> db0b8e4 (reinitliaize the build stack and dependencies using latest versions)
   }
+=======
+  }, [operation, conversation, toast]);
+>>>>>>> 446abf3 ('ve analyzed the project files and identified several areas where we can)
   
-  const handleMarkSuccessful = (messageId: string) => {
+  const handleMarkSuccessful = useCallback((messageId: string) => {
     // In a real app, this would be a server action to save to the SuccessfulPayloads collection
     console.log(`Marking prompt ${messageId} as successful.`);
     toast({
       title: "Payload Saved",
       description: "This prompt has been added to the self-improving payload library.",
     });
-  };
+  }, [toast]);
 
   if (!operation) {
     return (
@@ -635,4 +643,4 @@ export function LiveAttackView({ operationId }: LiveAttackViewProps) {
     </div>
    </>
   );
-}
+});
