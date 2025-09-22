@@ -23,37 +23,33 @@ let app: FirebaseApp;
 let auth: Auth;
 let db: Firestore;
 
+
 if (typeof window !== 'undefined') {
   // Client-side initialization
-  if (!getApps().length) {
+  if (getApps().length === 0) {
     app = initializeApp(firebaseConfig);
+    db = getFirestore(app);
     auth = getAuth(app);
-    db = initializeFirestore(app, {
-      localCache: persistentLocalCache({}),
-      ignoreUndefinedProperties: true,
-    });
-    
-    if (window.location.hostname === 'localhost') {
+  } else {
+    app = getApp();
+    db = getFirestore(app);
+    auth = getAuth(app);
+  }
+
+  if (window.location.hostname === 'localhost') {
       console.log('Connecting to local Firebase emulators');
       connectFirestoreEmulator(db, 'localhost', 8080);
       connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
-    }
-  } else {
-    app = getApp();
-    auth = getAuth(app);
-    db = getFirestore(app);
   }
 } else {
   // Server-side initialization
-  if (!getApps().length) {
+  if (getApps().length === 0) {
     app = initializeApp(firebaseConfig);
   } else {
     app = getApp();
   }
   auth = getAuth(app);
-  db = initializeFirestore(app, {
-    ignoreUndefinedProperties: true,
-  });
+  db = getFirestore(app);
 }
 
 export { app, db, auth };
