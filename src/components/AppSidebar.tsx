@@ -49,7 +49,7 @@ export function AppSidebar() {
         <div className={cn("flex items-center gap-2", isCollapsed && "gap-0")}>
             <Logo className="size-8 text-sidebar-primary" />
             <div className={cn("flex flex-col duration-200", isCollapsed && "hidden")}>
-              <h2 className="text-lg font-semibold tracking-tight text-sidebar-primary">
+              <h2 className="text-xl font-semibold tracking-tight text-sidebar-primary">
                 Red Team OS
               </h2>
             </div>
@@ -58,7 +58,7 @@ export function AppSidebar() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               {loading ? (
-                <Skeleton className="size-8 rounded-full" />
+                <Skeleton className="size-8" />
               ) : user ? (
                 <button>
                   <Avatar className="size-8">
@@ -67,7 +67,7 @@ export function AppSidebar() {
                   </Avatar>
                 </button>
               ) : (
-                <div className="size-8 rounded-full bg-muted" />
+                <div className="size-8 bg-muted" />
               )}
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
@@ -105,11 +105,11 @@ export function AppSidebar() {
       </SidebarContent>
       <Separator />
       <SidebarFooter>
-        <div className={cn("flex items-center gap-3 p-2 rounded-lg bg-sidebar-accent text-sidebar-accent-foreground", isCollapsed && "justify-center")}>
+        <div className={cn("flex items-center gap-3 p-2 bg-sidebar-accent text-sidebar-accent-foreground", isCollapsed && "justify-center")}>
           <Bot className="size-6 shrink-0"/>
           <div className={cn("flex flex-col duration-200", isCollapsed && "hidden")}>
-            <p className="text-sm font-medium">AI-Powered</p>
-            <p className="text-xs text-muted-foreground">Using Gemini</p>
+            <p className="text-lg font-medium">AI-Powered</p>
+            <p className="text-sm text-muted-foreground">Using Gemini</p>
           </div>
         </div>
          <Button variant="ghost" onClick={toggleSidebar} className="w-full justify-start">

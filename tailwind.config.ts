@@ -10,9 +10,9 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        body: ['Inter', 'sans-serif'],
-        headline: ['Inter', 'sans-serif'],
-        code: ['monospace'],
+        body: ['VT323', 'monospace'],
+        headline: ['VT323', 'monospace'],
+        code: ['VT323', 'monospace'],
       },
       colors: {
         background: 'hsl(var(--background))',
@@ -68,8 +68,8 @@ const config: Config = {
       },
       borderRadius: {
         lg: 'var(--radius)',
-        md: 'calc(var(--radius) - 2px)',
-        sm: 'calc(var(--radius) - 4px)',
+        md: 'calc(var(--radius) - 0px)',
+        sm: 'calc(var(--radius) - 0px)',
       },
       keyframes: {
         'accordion-down': {
