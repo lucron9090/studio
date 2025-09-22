@@ -86,10 +86,10 @@ export function QuickStartButton() {
 }
 
 
-export function OperationsTable({ initialOperations = [] }: { initialOperations: OperationClient[] }) {
+export function OperationsTable() {
   const router = useRouter();
   const { user } = useAuth();
-  const [operations, setOperations] = useState<OperationClient[]>(initialOperations);
+  const [operations, setOperations] = useState<OperationClient[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
