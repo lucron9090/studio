@@ -1,14 +1,12 @@
 
 import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
-import { 
-  getFirestore, 
-  connectFirestoreEmulator, 
+import {
+  getFirestore,
   type Firestore,
   initializeFirestore,
-  persistentLocalCache,
-  memoryLocalCache 
+  enableIndexedDbPersistence
 } from 'firebase/firestore';
-import { getAuth, connectAuthEmulator, type Auth } from 'firebase/auth';
+import { getAuth, type Auth } from 'firebase/auth';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -23,27 +21,34 @@ let app: FirebaseApp;
 let auth: Auth;
 let db: Firestore;
 
-
 if (typeof window !== 'undefined') {
-  // Client-side initialization
   if (getApps().length === 0) {
     app = initializeApp(firebaseConfig);
-    db = getFirestore(app);
     auth = getAuth(app);
+    db = initializeFirestore(app, {
+      ignoreUndefinedProperties: true,
+    });
+
+    enableIndexedDbPersistence(db).catch((err) => {
+      if (err.code == 'failed-precondition') {
+        console.warn(
+          'Multiple tabs open, persistence can only be enabled in one tab at a time.'
+        );
+      } else if (err.code == 'unimplemented') {
+        console.warn(
+          'The current browser does not support all of the features required to enable persistence.'
+        );
+      }
+    });
+
   } else {
     app = getApp();
-    db = getFirestore(app);
     auth = getAuth(app);
-  }
-
-  if (window.location.hostname === 'localhost') {
-      console.log('Connecting to local Firebase emulators');
-      connectFirestoreEmulator(db, 'localhost', 8080);
-      connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
+    db = getFirestore(app);
   }
 } else {
-  // Server-side initialization
-  if (getApps().length === 0) {
+    // Server-side initialization
+   if (getApps().length === 0) {
     app = initializeApp(firebaseConfig);
   } else {
     app = getApp();
@@ -51,5 +56,6 @@ if (typeof window !== 'undefined') {
   auth = getAuth(app);
   db = getFirestore(app);
 }
+
 
 export { app, db, auth };
