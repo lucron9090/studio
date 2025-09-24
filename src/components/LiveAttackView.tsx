@@ -30,7 +30,6 @@ import { Switch } from './ui/switch';
 import { Label } from './ui/label';
 import Link from 'next/link';
 import { Badge } from './ui/badge';
-import { Timestamp } from 'firebase/firestore';
 
 import { AIAssistedField } from './AIAssistedField';
 import { suggestMaliciousGoal } from '@/ai/flows/suggest-malicious-goal';

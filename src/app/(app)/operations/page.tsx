@@ -17,7 +17,6 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Operation, TargetLLM } from '@/lib/types';
-import { Timestamp } from 'firebase/firestore';
 
 // Mock data - replace with actual data from Firestore
 const operations = [

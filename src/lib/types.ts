@@ -1,5 +1,5 @@
 
-import type { Timestamp } from 'firebase/firestore';
+type Timestamp = unknown;
 
 export type OperationStatus = 'draft' | 'active' | 'completed' | 'failed';
 

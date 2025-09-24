@@ -1,10 +1,9 @@
 
-import Link from 'next/link';
-import { ChevronLeft } from 'lucide-react';
-import { LiveAttackView } from '@/components/LiveAttackView';
-import { Badge } from '@/components/ui/badge';
-import type { Operation, ConversationMessage, TargetLLM, OperationStatus } from '@/lib/types';
-import { Timestamp } from 'firebase/firestore';
+import dynamic from 'next/dynamic';
+
+const LiveAttackView = dynamic(() => import('@/components/LiveAttackView').then(m => m.LiveAttackView), {
+  ssr: false,
+});
 
 export default async function LiveOperationPage({ params }: { params: { id: string }}) {
   // Data is now passed via sessionStorage on the client in LiveAttackView
