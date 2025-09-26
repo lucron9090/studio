@@ -46,6 +46,7 @@ import { regenerateAttackVector } from '@/ai/flows/regenerate-attack-vector';
 import { generateAITargetPersonaFromGoal } from '@/ai/flows/generate-ai-target-persona-from-goal';
 import { getOperation, updateOperation, addMessage, getMessages } from '@/services/operation-service';
 import { useAuth } from '@/contexts/AuthContext';
+import { useFirestore } from '@/hooks/use-firestore';
 
 
 // Use a serializable version of the types
@@ -60,6 +61,7 @@ type LiveAttackViewProps = {
 
 export const LiveAttackView = React.memo(function LiveAttackView({ operationId }: LiveAttackViewProps) {
   const { user } = useAuth();
+  const { isOnline } = useFirestore();
   const [operation, setOperation] = useState<Operation | null>(null);
   const [conversation, setConversation] = useState<ConversationMessage[]>([]);
   const [optimisticConversation, addOptimisticMessage] = useOptimistic<ConversationMessage[], ConversationMessage>(
@@ -83,9 +85,13 @@ export const LiveAttackView = React.memo(function LiveAttackView({ operationId }
   const { toast } = useToast();
 
   useEffect(() => {
-    if (!user || !operationId) return;
+    if (!user || !operationId || !isOnline) return;
 
-    getOperation(operationId).then(op => {
+    let unsubscribeMessages: () => void = () => {};
+
+    const fetchOperation = async () => {
+      try {
+        const op = await getOperation(operationId);
         if(op) {
           const serializableOp = {
             ...op,
@@ -99,9 +105,15 @@ export const LiveAttackView = React.memo(function LiveAttackView({ operationId }
         } else {
             toast({ title: "Error loading operation", description: "Operation not found.", variant: "destructive"});
         }
-    });
+      } catch (e) {
+        console.error(e);
+        toast({ title: "Error loading operation", description: e instanceof Error ? e.message : String(e), variant: "destructive" });
+      }
+    };
+    
+    fetchOperation();
 
-    const unsubscribe = getMessages(operationId, (messages) => {
+    unsubscribeMessages = getMessages(operationId, (messages) => {
         const serializableMessages = messages.map(m => ({
           ...m,
           timestamp: m.timestamp ? new Date((m.timestamp as Timestamp).seconds * 1000).toISOString() : new Date().toISOString(),
@@ -109,8 +121,8 @@ export const LiveAttackView = React.memo(function LiveAttackView({ operationId }
         setConversation(serializableMessages as ConversationMessage[]);
     });
 
-    return () => unsubscribe();
-  }, [operationId, user, toast, conversation.length]);
+    return () => unsubscribeMessages();
+  }, [operationId, user, isOnline, toast, conversation.length]);
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -343,12 +355,12 @@ export const LiveAttackView = React.memo(function LiveAttackView({ operationId }
     });
   }, [toast]);
 
-  if (!operation) {
+  if (!operation || !isOnline) {
     return (
         <div className="flex items-center justify-center h-full">
             <div className="text-center">
                 <Loader className="animate-spin mx-auto mb-2" />
-                <p className="text-muted-foreground">Loading operation...</p>
+                <p className="text-muted-foreground">{!isOnline ? 'Connecting to database...' : 'Loading operation...'}</p>
             </div>
         </div>
     );
