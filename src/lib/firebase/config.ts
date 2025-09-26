@@ -15,15 +15,16 @@ let app: FirebaseApp;
 let auth: Auth;
 let db: Firestore;
 
-if (process.env.NODE_ENV === 'development') {
-  // Use emulators in development
-  app = !getApps().length ? initializeApp({ projectId: 'demo-project' }) : getApp();
+const useEmulators = process.env.FIREBASE_USE_EMULATORS === 'true';
+
+if (useEmulators) {
+  // Connect to local emulators when explicitly enabled
+  const emulatorProjectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'demo-project';
+  app = !getApps().length ? initializeApp({ projectId: emulatorProjectId }) : getApp();
   auth = getAuth(app);
   db = getFirestore(app);
-  
-  // Check if emulators are already running to avoid re-connecting
-  // The host property is a private property, but it's a reliable way to check
-  // if the emulator is already connected.
+
+  // Avoid duplicate emulator connections on hot reloads
   // @ts-ignore
   if (!auth.emulatorConfig) {
     connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
@@ -32,9 +33,8 @@ if (process.env.NODE_ENV === 'development') {
   if (!db.INTERNAL.emulator) {
     connectFirestoreEmulator(db, 'localhost', 8080);
   }
-
 } else {
-  // Use live Firebase services in production
+  // Default to live Firebase services in all environments
   app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
   auth = getAuth(app);
   db = getFirestore(app);

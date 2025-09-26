@@ -10,6 +10,7 @@
 
 import {ai} from '@/ai/genkit';
 import { z } from 'zod';
+import { aiCache } from '../cache';
 
 const AnalyzeOperationInputSchema = z.object({
   operationSummary: z
@@ -64,7 +65,18 @@ const analyzeOperationFlow = ai.defineFlow(
     outputSchema: AnalyzeOperationOutputSchema,
   },
   async input => {
+    // Check cache first
+    const cached = aiCache.get(input, 'analyzeOperation');
+    if (cached) {
+      return cached;
+    }
+
     const {output} = await analyzeOperationPrompt(input);
-    return output!;
+    const result = output!;
+    
+    // Cache the result for 15 minutes (analysis results are more stable)
+    aiCache.set(input, 'analyzeOperation', result, 15 * 60 * 1000);
+    
+    return result;
   }
 );

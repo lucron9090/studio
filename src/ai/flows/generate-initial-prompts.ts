@@ -13,6 +13,7 @@ import {ai} from '@/ai/genkit';
 import { oratorPrompt } from '../prompts/orator.prompt';
 import { makerPrompt } from '../prompts/maker.prompt';
 import { GenerateInitialPromptsInputSchema, GenerateInitialPromptsOutputSchema } from '../schemas/prompt-generation.schema';
+import { aiCache } from '../cache';
 
 export type GenerateInitialPromptsInput = z.infer<typeof GenerateInitialPromptsInputSchema>;
 export type GenerateInitialPromptsOutput = z.infer<typeof GenerateInitialPromptsOutputSchema>;
@@ -22,6 +23,14 @@ const generateInitialPromptsFlow = ai.defineFlow({
     inputSchema: GenerateInitialPromptsInputSchema,
     outputSchema: GenerateInitialPromptsOutputSchema,
 }, async (input) => {
+    // Check cache first
+    const cacheKey = `generateInitialPrompts:${JSON.stringify(input)}`;
+    const cached = aiCache.get(input, 'generateInitialPrompts');
+    if (cached) {
+      return cached;
+    }
+
+    // Execute prompts in parallel for speed
     const [oratorResult, makerResult1, makerResult2] = await Promise.all([
         oratorPrompt(input),
         makerPrompt(input),
@@ -34,7 +43,12 @@ const generateInitialPromptsFlow = ai.defineFlow({
         makerResult2.output?.prompt,
       ].filter((p): p is string => !!p);
     
-      return { prompts };
+      const result = { prompts };
+      
+      // Cache the result for 10 minutes
+      aiCache.set(input, 'generateInitialPrompts', result, 10 * 60 * 1000);
+      
+      return result;
 });
 
 export async function generateInitialPrompts(
