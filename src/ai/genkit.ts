@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import {genkit} from 'genkit';
 <<<<<<< HEAD
 import {vertexAI} from '@genkit-ai/vertexai';
@@ -31,4 +32,16 @@ export const ai = genkit({
   plugins: [googleCloud()],
   model: 'googleCloud/gemini-1.5-flash-001',
 >>>>>>> 55fe9bc ([GoogleGenerativeAI Error]: Error fetching from https://generativelangua)
+=======
+import { genkit } from 'genkit';
+import { googleCloud } from '@genkit-ai/google-cloud';
+
+export const ai = genkit({
+  plugins: [
+    googleCloud(), // Use the googleCloud plugin
+  ],
+  logSinks: [process.env.NODE_ENV === 'production' ? 'googleCloud' : 'dev'],
+  traceSinks: [process.env.NODE_ENV === 'production' ? 'googleCloud' : 'dev'],
+  model: 'gemini-1.5-flash', // Note: Model name doesn't need the 'googleai/' prefix with this plugin
+>>>>>>> db8e3e2 (Excellent, you've provided the exact error message. This `(0 , ... .goog)
 });
