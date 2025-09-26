@@ -1,7 +1,11 @@
 import {genkit} from 'genkit';
 import {googleCloud} from '@genkit-ai/google-cloud';
-import {gcp} from '@genkit-ai/gcp';
 
 export const ai = genkit({
-  plugins: [googleCloud()],
+  plugins: [
+    googleCloud({
+      // Force all generative model requests to be routed to Vertex AI.
+      model: 'vertexai/gemini-1.5-flash-001',
+    }),
+  ],
 });
