@@ -1,4 +1,5 @@
 import {genkit} from 'genkit';
+<<<<<<< HEAD
 import {vertexAI} from '@genkit-ai/vertexai';
 
 export const ai = genkit({
@@ -23,4 +24,11 @@ export const ai = genkit({
 =======
   model: 'googleai/gemini-1.5-flash-latest',
 >>>>>>> 446abf3 ('ve analyzed the project files and identified several areas where we can)
+=======
+import {googleCloud} from '@genkit-ai/google-cloud';
+
+export const ai = genkit({
+  plugins: [googleCloud()],
+  model: 'googleCloud/gemini-1.5-flash-001',
+>>>>>>> 55fe9bc ([GoogleGenerativeAI Error]: Error fetching from https://generativelangua)
 });

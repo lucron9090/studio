@@ -31,7 +31,11 @@
 =======
 =======
     "@genkit-ai/firebase": "1.14.0",
+<<<<<<< HEAD
 >>>>>>> da66106 (The app isn't starting. Please investigate what could be wrong based on)
+=======
+    "@genkit-ai/google-cloud": "1.14.0",
+>>>>>>> 55fe9bc ([GoogleGenerativeAI Error]: Error fetching from https://generativelangua)
     "@genkit-ai/googleai": "1.14.0",
 >>>>>>> dae975d (The app isn't starting. Please investigate what could be wrong based on)
     "@hookform/resolvers": "^4.1.3",
