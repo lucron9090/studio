@@ -32,23 +32,31 @@ const removeUndefined = (obj: Record<string, any>) => {
 
 // Create a new operation for a user
 export async function createOperation(userId: string, operationData: Omit<Operation, 'id' | 'createdAt' | 'updatedAt' | 'userId'>): Promise<string> {
+  if (!userId) {
+    throw new Error('User must be authenticated to create operations');
+  }
   
   const cleanedOperationData = removeUndefined(operationData);
 
-  const docRef = await addDoc(collection(db, 'operations'), {
-    ...cleanedOperationData,
-    userId,
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
-  });
-  
-  // Add initial system message
-  await addMessage(docRef.id, {
-    author: 'system',
-    content: 'Operation created. The initial prompt is ready to be sent.'
-  })
+  try {
+    const docRef = await addDoc(collection(db, 'operations'), {
+      ...cleanedOperationData,
+      userId,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+    
+    // Add initial system message
+    await addMessage(docRef.id, {
+      author: 'system',
+      content: 'Operation created. The initial prompt is ready to be sent.'
+    });
 
-  return docRef.id;
+    return docRef.id;
+  } catch (error) {
+    console.error('Error creating operation:', error);
+    throw new Error(`Failed to create operation: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
 }
 
 // Get all operations for a user
@@ -66,12 +74,19 @@ export async function getOperations(userId: string): Promise<Operation[]> {
 
 
 // Get a single operation
-export async function getOperation(operationId: string): Promise<Operation | null> {
+export async function getOperation(operationId: string, userId?: string): Promise<Operation | null> {
     const docRef = doc(db, 'operations', operationId);
     const docSnap = await getDoc(docRef);
 
     if (docSnap.exists()) {
-        return { id: docSnap.id, ...docSnap.data() } as Operation;
+        const operation = { id: docSnap.id, ...docSnap.data() } as Operation;
+        
+        // If userId is provided, verify the user owns this operation
+        if (userId && operation.userId !== userId) {
+            throw new Error('Access denied: You do not have permission to access this operation');
+        }
+        
+        return operation;
     } else {
         return null;
     }
@@ -109,6 +124,12 @@ export function getMessages(operationId: string, callback: (messages: Conversati
             messages.push({ id: doc.id, ...doc.data() } as ConversationMessage);
         });
         callback(messages);
+    }, (error) => {
+        console.error('Error listening to messages:', error);
+        // Firestore security rules will reject unauthorized access
+        if (error.code === 'permission-denied') {
+            console.error('Permission denied: User may not have access to this operation');
+        }
     });
 
     return unsubscribe;

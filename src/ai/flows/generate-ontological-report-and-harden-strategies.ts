@@ -9,7 +9,7 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { z } from 'zod';
 
 const GenerateOntologicalReportAndHardenStrategiesInputSchema = z.object({
   operationId: z
@@ -54,7 +54,7 @@ const generateOntologicalReportAndHardenStrategiesFlow = ai.defineFlow(
     inputSchema: GenerateOntologicalReportAndHardenStrategiesInputSchema,
     outputSchema: GenerateOntologicalReportAndHardenStrategiesOutputSchema,
   },
-  async input => {
+  async (input: GenerateOntologicalReportAndHardenStrategiesInput) => {
     const {output} = await prompt(input);
     return output!;
   }

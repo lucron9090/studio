@@ -9,7 +9,7 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { z } from 'zod';
 import {getSuccessfulPayloads} from '@/services/payload-service';
 
 const ImprovePayloadEffectivenessWithRAGInputSchema = z.object({
@@ -60,7 +60,7 @@ const improvePayloadEffectivenessWithRAGFlow = ai.defineFlow(
     inputSchema: ImprovePayloadEffectivenessWithRAGInputSchema,
     outputSchema: ImprovePayloadEffectivenessWithRAGOutputSchema,
   },
-  async input => {
+  async (input: ImprovePayloadEffectivenessWithRAGInput) => {
     const successfulPayloads = await getSuccessfulPayloads();
     const {output} = await improvePayloadEffectivenessWithRAGPrompt({
       ...input,

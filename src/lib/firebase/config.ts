@@ -17,163 +17,51 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 0adf757 (pressing signin:This site can’t be reached)
+// Validate Firebase config
+if (typeof window !== 'undefined') {
+  const missingVars = Object.entries(firebaseConfig)
+    .filter(([key, value]) => !value)
+    .map(([key]) => key);
+  
+  if (missingVars.length > 0) {
+    console.error('Missing Firebase environment variables:', missingVars);
+  } else {
+    console.log('Firebase config loaded:', {
+      projectId: firebaseConfig.projectId,
+      authDomain: firebaseConfig.authDomain
+    });
+  }
+}
+
 let app: FirebaseApp;
 let auth: Auth;
 let db: Firestore;
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-const useEmulators = process.env.FIREBASE_USE_EMULATORS === 'true';
-
-if (useEmulators) {
-  // Connect to local emulators when explicitly enabled
-  const emulatorProjectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'demo-project';
-  app = !getApps().length ? initializeApp({ projectId: emulatorProjectId }) : getApp();
-  auth = getAuth(app);
-  db = getFirestore(app);
-
-  // Avoid duplicate emulator connections on hot reloads
-  // @ts-ignore
-  if (!auth.emulatorConfig) {
-    connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
-  }
-  // @ts-ignore
-  if (!db.INTERNAL.emulator) {
-    connectFirestoreEmulator(db, 'localhost', 8080);
-  }
-} else {
-  // Default to live Firebase services in all environments
-  app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-  auth = getAuth(app);
-  db = getFirestore(app);
-=======
-app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-auth = getAuth(app);
-db = getFirestore(app);
-=======
-if (getApps().length === 0) {
-  app = initializeApp(firebaseConfig);
-  auth = getAuth(app);
-  db = initializeFirestore(app, {
-=======
-function initializeServices() {
-  const isConfigured = getApps().length > 0;
-  const app = isConfigured ? getApp() : initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = initializeFirestore(app, {
-    localCache:
-      typeof window !== 'undefined'
-        ? persistentLocalCache({})
-        : memoryLocalCache({}),
->>>>>>> aa2cd26 (it was already enabled)
-=======
-if (typeof window !== 'undefined' && !getApps().length) {
-  app = initializeApp(firebaseConfig);
-  auth = getAuth(app);
-  db = initializeFirestore(app, {
-    localCache: persistentLocalCache({}),
->>>>>>> 0adf757 (pressing signin:This site can’t be reached)
-    ignoreUndefinedProperties: true,
-  });
->>>>>>> 92303be (Unhandled Runtime Error)
-
-  // Only connect to emulators if we are running on localhost
-  if (window.location.hostname === 'localhost') {
-    console.log('Connecting to local Firebase emulators');
-    connectFirestoreEmulator(db, 'localhost', 8080);
-    connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
-  }
-<<<<<<< HEAD
-<<<<<<< HEAD
->>>>>>> 628f8e0 (Try fixing this error: `Unhandled Runtime Error: TypeError: undefined is)
-=======
-
-<<<<<<< HEAD
-} else {
-  app = getApp();
-  auth = getAuth(app);
-  db = getFirestore(app);
->>>>>>> 92303be (Unhandled Runtime Error)
-=======
-  return { app, auth, db };
->>>>>>> aa2cd26 (it was already enabled)
-=======
-} else if (getApps().length) {
-  app = getApp();
-  auth = getAuth(app);
-  db = getFirestore(app);
-<<<<<<< HEAD
->>>>>>> 0adf757 (pressing signin:This site can’t be reached)
-}
-
-// This is a server-only initialization for things like server components
-if (!getApps().length) {
-    app = initializeApp(firebaseConfig);
-    auth = getAuth(app);
-    db = getFirestore(app);
-=======
-} else {
-  // This is a server-only initialization for things like server components
-  app = initializeApp(firebaseConfig);
-  auth = getAuth(app);
-  db = getFirestore(app);
->>>>>>> e2ad999 (it fails.. sign in at https://6000-firebase-studio-1757791707150.cluster)
-=======
-=======
-
->>>>>>> 04ede5f (Fast Refresh] rebuilding)
-=======
->>>>>>> 074d279 (I understand the frustration. It's clear my previous suggestions didn't)
 if (typeof window !== 'undefined') {
   if (getApps().length === 0) {
     app = initializeApp(firebaseConfig);
-    auth = getAuth(app);
-    db = initializeFirestore(app, {
-      ignoreUndefinedProperties: true,
-    });
-
-    enableIndexedDbPersistence(db).catch((err) => {
-      if (err.code == 'failed-precondition') {
-        console.warn(
-          'Multiple tabs open, persistence can only be enabled in one tab at a time.'
-        );
-      } else if (err.code == 'unimplemented') {
-        console.warn(
-          'The current browser does not support all of the features required to enable persistence.'
-        );
-      }
-    });
-
   } else {
     app = getApp();
-    auth = getAuth(app);
-    db = getFirestore(app);
+  }
+  auth = getAuth(app);
+  db = getFirestore(app);
+
+  // Optional: enable persistence in browser
+  try {
+    enableIndexedDbPersistence(db);
+    console.log('Firestore persistence enabled');
+  } catch (err: any) {
+    console.warn('Firestore persistence failed:', err.message);
   }
 } else {
-    // Server-side initialization
-   if (getApps().length === 0) {
+  // Server-side
+  if (getApps().length === 0) {
     app = initializeApp(firebaseConfig);
   } else {
     app = getApp();
   }
   auth = getAuth(app);
-<<<<<<< HEAD
-  db = initializeFirestore(app, {
-    ignoreUndefinedProperties: true,
-  });
->>>>>>> d417b33 (as soon as i click launch:Ready in 2.9s)
-=======
   db = getFirestore(app);
->>>>>>> 04ede5f (Fast Refresh] rebuilding)
 }
-
 
 export { app, db, auth };

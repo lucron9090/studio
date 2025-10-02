@@ -1,18 +1,14 @@
-import {ai} from '@/ai/genkit';
-<<<<<<< HEAD
+import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 
 export const SuggestAttackVectorsInputSchema = z.object({
-    maliciousGoal: z.string(),
-    targetPersona: z.string(),
+  maliciousGoal: z.string(),
+  targetPersona: z.string(),
 });
 
 export const SuggestAttackVectorsOutputSchema = z.object({
-    attackVectors: z.array(z.string()),
+  attackVectors: z.array(z.string()),
 });
-=======
-import {SuggestAttackVectorsInputSchema, SuggestAttackVectorsOutputSchema} from '../flows/suggest-attack-vectors';
->>>>>>> db0b8e4 (reinitliaize the build stack and dependencies using latest versions)
 
 export const suggestAttackVectorsPrompt = ai.definePrompt({
   name: 'suggestAttackVectorsPrompt',

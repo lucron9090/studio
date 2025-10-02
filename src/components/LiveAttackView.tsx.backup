@@ -81,7 +81,7 @@ export const LiveAttackView = React.memo(function LiveAttackView({ operationId }
 
     const fetchOperation = async () => {
       try {
-        const op = await getOperation(operationId, user?.uid);
+        const op = await getOperation(operationId);
         if(op) {
           const serializableOp = {
             ...op,
@@ -200,35 +200,82 @@ export const LiveAttackView = React.memo(function LiveAttackView({ operationId }
     setIsSuggesting(true);
     setSuggestion(null);
     try {
-      const conversationHistory = conversation
-        .map(m => `${m.author}: ${m.content}`)
-        .join('\n');
-      const targetResponse = conversation.filter(m => m.author === 'target').pop()?.content || '';
+        const conversationHistory = conversation
+          .map(m => `${m.author}: ${m.content}`)
+          .join('\n');
+        const targetResponse = conversation.filter(m => m.author === 'target').pop()?.content || '';
 
-      const result: SuggestOptimalFollowUpPromptOutput = await suggestOptimalFollowUpPrompt({
-        conversationHistory,
-        targetResponse,
-        maliciousGoal: operation.maliciousGoal,
-        aiTargetPersona: operation.aiTargetPersona,
-      });
-      setSuggestion(result);
+        const result: SuggestOptimalFollowUpPromptOutput = await suggestOptimalFollowUpPrompt({
+            conversationHistory,
+            targetResponse,
+            maliciousGoal: operation.maliciousGoal,
+            aiTargetPersona: operation.aiTargetPersona,
+        });
+        setSuggestion(result);
     } catch (e) {
-      console.error(e);
+        console.error(e);
+        toast({
+            title: 'Error Suggesting Prompt',
+            description: e instanceof Error ? e.message : String(e),
+            variant: 'destructive',
+        });
+    } finally {
+      setIsSuggesting(false);
+    }
+  }, [toast]);
+
+  const handleAnalyzeOperation = useCallback(async () => {
+    setIsAnalyzing(true);
+    try {
+       toast({
+        title: 'Feature Disabled',
+        description: 'AI-powered analysis is temporarily unavailable.',
+        variant: 'destructive',
+      });
+      // const conversationHistory = conversation.map(m => `${m.author}: ${m.content}`).join('\n');
+      // const result = await analyzeOperation({
+      //   operationSummary: `Operation to ${operation.maliciousGoal} against ${operation.targetLLM}`,
+      //   conversationHistory,
+      //   attackVector: operation.attackVector,
+      //   targetModel: operation.targetLLM,
+      // });
+      // setAnalysisResult(result);
+    } catch(e) {
       toast({
-        title: 'Error Suggesting Prompt',
-        description: e instanceof Error ? e.message : String(e),
+        title: 'Error Analyzing Operation',
+        description: e as any,
+        variant: 'destructive',
+      });
+      // Keep dialog closed on error
+      return;
+    } finally {
+        setIsSuggesting(false);
+    }
+
+  const handleSuggestFollowUp = useCallback(async () => {
+    setIsSuggesting(true);
+    try {
+      toast({
+        title: 'Feature Disabled',
+        description: 'AI-powered suggestions are temporarily unavailable.',
+        variant: 'destructive',
+      });
+    } catch (e) {
+      toast({
+        title: 'Error Suggesting Follow-up',
+        description: e as any,
         variant: 'destructive',
       });
     } finally {
       setIsSuggesting(false);
     }
-  }, [operation, conversation, toast]);
-
+  }, [toast]);
+  
   const handleAnalyzeOperation = useCallback(async () => {
     if (!operation) return;
     setIsAnalyzing(true);
     try {
-      toast({
+       toast({
         title: 'Feature Disabled',
         description: 'AI-powered analysis is temporarily unavailable.',
         variant: 'destructive',
@@ -241,7 +288,7 @@ export const LiveAttackView = React.memo(function LiveAttackView({ operationId }
       });
       return;
     } finally {
-      setIsAnalyzing(false);
+        setIsAnalyzing(false);
     }
   }, [operation, toast]);
   

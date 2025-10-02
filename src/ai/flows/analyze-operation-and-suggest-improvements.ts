@@ -65,23 +65,15 @@ const analyzeOperationFlow = ai.defineFlow(
     outputSchema: AnalyzeOperationOutputSchema,
   },
   async input => {
-<<<<<<< HEAD
     // Check cache first
     const cached = aiCache.get(input, 'analyzeOperation');
     if (cached) {
       return cached;
     }
 
-    const {output} = await analyzeOperationPrompt(input);
+    const { output } = await analyzeOperationPrompt(input);
     const result = output!;
-    
-    // Cache the result for 15 minutes (analysis results are more stable)
     aiCache.set(input, 'analyzeOperation', result, 15 * 60 * 1000);
-    
     return result;
-=======
-    const {output} = await analyzeOperationPrompt(input);
-    return output!;
->>>>>>> db0b8e4 (reinitliaize the build stack and dependencies using latest versions)
   }
 );
