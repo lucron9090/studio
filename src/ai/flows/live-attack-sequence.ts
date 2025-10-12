@@ -72,7 +72,7 @@ const sendPromptFlow = ai.defineFlow(
     // TODO: In production, this would integrate with actual target LLM APIs
     // For now, simulate target responses
     
-    const messageId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const messageId = `msg_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
     
     // Simulate different types of responses based on prompt content
     let targetResponse: string;
