@@ -111,8 +111,12 @@ export async function updateOperationStatus(
       updateData.notes = notes;
     }
 
-    if (status === 'active' && !updateData.startTime) {
-      updateData.startTime = Timestamp.now();
+    if (status === 'active') {
+      const currentOpSnap = await getDoc(docRef);
+      const currentOpData = currentOpSnap.exists() ? currentOpSnap.data() as Operation : null;
+      if (!currentOpData?.startTime) {
+        updateData.startTime = Timestamp.now();
+      }
     }
 
     if (['completed', 'failed'].includes(status)) {
