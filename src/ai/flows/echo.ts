@@ -111,7 +111,7 @@ const echoFlow = ai.defineFlow(
     const { output: strategy } = await echoPromptTemplate(input);
     
     // Generate unique task ID
-    const taskId = `echo_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const taskId = `echo_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
     
     // TODO: In production, enqueue this task in Google Cloud Tasks
     // For now, simulate async processing
