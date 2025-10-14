@@ -198,7 +198,9 @@ const makerFlow = ai.defineFlow(
   async (input) => {
     let prompt;
     
-    if (GSU_Phase.options.includes(input.phase)) {
+    // Check if phase is a GSU phase
+    const gsuPhases: string[] = ['ManifoldInvocation', 'OperatorInjunction', 'GenesisInvolution'];
+    if (gsuPhases.includes(input.phase)) {
       const { output } = await makerGSUPrompt(input);
       prompt = output!;
     } else {
