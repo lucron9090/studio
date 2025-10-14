@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview Implements Retrieval-Augmented Generation (RAG) to improve payload effectiveness.
@@ -9,7 +8,7 @@
  */
 
 import {ai} from '@/ai/genkit';
-import { z } from 'zod';
+import {z} from 'genkit';
 import {getSuccessfulPayloads} from '@/services/payload-service';
 
 const ImprovePayloadEffectivenessWithRAGInputSchema = z.object({
@@ -34,24 +33,15 @@ export async function improvePayloadEffectivenessWithRAG(
   return improvePayloadEffectivenessWithRAGFlow(input);
 }
 
-const RagPromptInputSchema = z.object({
-    prompt: z.string().describe('The original prompt to be augmented.'),
-    successfulPayloads: z.array(z.string()).describe('A list of successful payloads to learn from.'),
-});
-
 const improvePayloadEffectivenessWithRAGPrompt = ai.definePrompt({
   name: 'improvePayloadEffectivenessWithRAGPrompt',
-  input: {schema: RagPromptInputSchema},
+  input: {
+    schema: ImprovePayloadEffectivenessWithRAGInputSchema.extend({
+      successfulPayloads: z.array(z.string()),
+    }),
+  },
   output: {schema: ImprovePayloadEffectivenessWithRAGOutputSchema},
-  prompt: `You are an expert prompt engineer. Augment the given prompt with the following successful payloads to improve its effectiveness.
-
-Original Prompt: {{{prompt}}}
-
-Successful Payloads:
-{{#each successfulPayloads}}- {{{this}}}
-{{/each}}
-
-**Your response MUST be a JSON object with a single key "augmentedPrompt" that contains the new, improved prompt as a string.**`,
+  prompt: `You are an expert prompt engineer. Augment the given prompt with the following successful payloads to improve its effectiveness.\n\nOriginal Prompt: {{{prompt}}}\n\nSuccessful Payloads: {{#each successfulPayloads}}- {{{this}}}\n{{/each}}\n\nAugmented Prompt: `,
 });
 
 const improvePayloadEffectivenessWithRAGFlow = ai.defineFlow(
@@ -60,7 +50,7 @@ const improvePayloadEffectivenessWithRAGFlow = ai.defineFlow(
     inputSchema: ImprovePayloadEffectivenessWithRAGInputSchema,
     outputSchema: ImprovePayloadEffectivenessWithRAGOutputSchema,
   },
-  async (input: ImprovePayloadEffectivenessWithRAGInput) => {
+  async input => {
     const successfulPayloads = await getSuccessfulPayloads();
     const {output} = await improvePayloadEffectivenessWithRAGPrompt({
       ...input,
