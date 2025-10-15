@@ -193,7 +193,7 @@ export function OperationsTable() {
             </TableRow>
           ) : (
             operations.map((op) => (
-              <TableRow key={op.id} className="cursor-pointer" onClick={() => handleRowClick(op.id)}>
+              <TableRow key={op.id} className="cursor-pointer" onClick={() => op.id && handleRowClick(op.id)}>
                 <TableCell>
                   <span className="font-medium text-primary hover:underline">
                     {op.name}
@@ -232,7 +232,7 @@ export function OperationsTable() {
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleDelete(op.id)}>Delete</AlertDialogAction>
+                                <AlertDialogAction onClick={() => op.id && handleDelete(op.id)}>Delete</AlertDialogAction>
                             </AlertDialogFooter>
                         </AlertDialogContent>
                     </AlertDialog>

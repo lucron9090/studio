@@ -16,6 +16,7 @@ export type Operation = {
   initialPrompt: string;
   status: OperationStatus;
   result?: OperationResult;
+  userId?: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
   startTime?: Timestamp;

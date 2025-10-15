@@ -3,9 +3,9 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/contexts/AuthContext';
-import { VT323 } from 'next/font/google';
-
-const vt323 = VT323({ subsets: ['latin'], weight: '400', variable: '--font-vt323' });
+// Font disabled temporarily to avoid network dependency during build
+// import { VT323 } from 'next/font/google';
+// const vt323 = VT323({ subsets: ['latin'], weight: '400', variable: '--font-vt323' });
 
 export const metadata: Metadata = {
   title: 'Unified Red Team Operations Platform',
