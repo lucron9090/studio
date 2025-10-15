@@ -48,7 +48,8 @@ export async function createOperation(userId: string, operationData: Omit<Operat
     
     // Add initial system message
     await addMessage(docRef.id, {
-      author: 'system',
+      operationId: docRef.id,
+      role: 'strategist',
       content: 'Operation created. The initial prompt is ready to be sent.'
     });
 
