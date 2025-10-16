@@ -55,7 +55,10 @@ export async function runGenkitFlow<I, O>(
       const inputData = input as any;
       const maliciousGoal = inputData?.malicious_goal || inputData?.maliciousGoal || 'test';
       const recommendations = generateMockVectorRecommendations(maliciousGoal);
-      return { output: recommendations } as O;
+      return { 
+        attackVectors: recommendations.map(r => r.vector),
+        recommendations: recommendations
+      } as O;
     }
     
     default:
