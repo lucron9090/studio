@@ -167,7 +167,7 @@ export function OperationWizard() {
         return (
           <CardHeader>
             <CardTitle>Step 3: Initialize AI Target Persona</CardTitle>
-            <CardDescription>Describe the target's persona or generate one with AI.</CardDescription>
+            <CardDescription>Describe the target&apos;s persona or generate one with AI.</CardDescription>
           </CardHeader>
         );
       case 4:
