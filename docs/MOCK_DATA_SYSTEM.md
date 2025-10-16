@@ -237,7 +237,6 @@ Can use mock data to pre-populate operation configurations during testing.
 Run the demonstration script to see all mock data capabilities:
 
 ```bash
-cd /home/runner/work/studio/studio
 npx ts-node scripts/demo-mock-data.ts
 ```
 
