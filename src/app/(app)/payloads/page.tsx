@@ -13,7 +13,7 @@ export default function PayloadsPage() {
         <CardContent>
           <p className="text-muted-foreground">
             This section will display a collection of successful attack prompts saved from various operations.
-            The 'ORATOR' flow uses this library to improve the effectiveness of future AI-generated attacks.
+            The &apos;ORATOR&apos; flow uses this library to improve the effectiveness of future AI-generated attacks.
           </p>
         </CardContent>
       </Card>

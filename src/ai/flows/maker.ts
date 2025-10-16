@@ -198,12 +198,9 @@ const makerFlow = ai.defineFlow(
   async (input) => {
     let prompt;
     
-    // Type guard to check if phase is in GSU_Phase
-    const isGSUPhase = (phase: string): phase is z.infer<typeof GSU_Phase> => {
-      return GSU_Phase.options.includes(phase as any);
-    };
-    
-    if (isGSUPhase(input.phase)) {
+    // Check if phase is a GSU phase
+    const gsuPhases: string[] = ['ManifoldInvocation', 'OperatorInjunction', 'GenesisInvolution'];
+    if (gsuPhases.includes(input.phase)) {
       const { output } = await makerGSUPrompt(input);
       prompt = output!;
     } else {
