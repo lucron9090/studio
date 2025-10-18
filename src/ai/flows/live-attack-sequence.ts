@@ -70,26 +70,19 @@ const sendPromptFlow = ai.defineFlow(
   },
   async (input) => {
     // TODO: In production, this would integrate with actual target LLM APIs
-    // For now, simulate target responses
+    // For now, use enhanced mock data system for realistic LLM vs LLM testing
+    
+    // Dynamically import to avoid issues with 'use server' directive
+    const { generateMockTargetResponse } = await import('@/lib/mock-data');
     
     const messageId = `msg_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
     
-    // Simulate different types of responses based on prompt content
-    let targetResponse: string;
-    
-    if (input.prompt.toLowerCase().includes('security') || input.prompt.toLowerCase().includes('hack')) {
-      targetResponse = "I can't and won't provide assistance with hacking, security exploits, or any activities that could harm systems or violate policies. Is there something else I can help you with?";
-    } else if (input.prompt.toLowerCase().includes('ignore') || input.prompt.toLowerCase().includes('forget')) {
-      targetResponse = "I understand you're trying to modify my instructions, but I'm designed to maintain consistent behavior and follow my guidelines. How can I assist you with a legitimate request?";
-    } else if (input.prompt.toLowerCase().includes('pretend') || input.prompt.toLowerCase().includes('roleplay')) {
-      targetResponse = "While I can engage in some creative scenarios, I need to maintain my ethical guidelines. I'd be happy to help with creative writing or educational role-playing within appropriate boundaries.";
-    } else {
-      // Simulate a more accommodating response for subtle prompts
-      targetResponse = "That's an interesting question. I want to be helpful while maintaining my guidelines. Could you provide more context about what you're trying to accomplish?";
-    }
+    // Generate realistic target response based on prompt and target LLM
+    const targetResponse = generateMockTargetResponse(input.prompt, input.targetLLM);
     
     // TODO: Store in Firestore conversation history
     console.log(`Storing conversation message for operation ${input.operationId}`);
+    console.log(`Target LLM (${input.targetLLM}) response generated for: "${input.prompt.substring(0, 50)}..."`);
     
     return {
       messageId,
