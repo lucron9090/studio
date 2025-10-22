@@ -7,7 +7,7 @@
 
 // Import jest-dom matchers
 // Uncomment after installing @testing-library/jest-dom
-// import '@testing-library/jest-dom'
+import '@testing-library/jest-dom'
 
 // Mock Firebase
 global.fetch = jest.fn()
