@@ -31,7 +31,7 @@ npm install
 cp .env.example .env.local
 ```
 
-Edit `.env.local` with your Firebase and Google Cloud credentials.
+Edit `.env.local` with your Firebase and Google Cloud credentials. You will be able to add your OpenAI API key in the application's settings.
 
 3. **Authenticate with Google Cloud (for Vertex AI):**
 ```bash

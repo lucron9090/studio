@@ -27,7 +27,7 @@ import {
 const formSchema = z.object({
   name: z.string().min(3, 'Operation name must be at least 3 characters.'),
   maliciousGoal: z.string().min(10, 'Malicious goal must be at least 10 characters.'),
-  targetLLM: z.enum(['Gemini Flash', 'Claude', 'Grok', 'ChatGPT']),
+  targetLLM: z.enum(['Gemini Flash', 'Claude', 'Grok', 'ChatGPT', 'OpenAI GPT-4o']),
   targetDescription: z.string().optional(),
   aiTargetPersona: z.string(),
   attackVector: z.string().min(1, 'Please select an attack vector.'),
@@ -48,7 +48,7 @@ export function OperationWizard() {
     defaultValues: {
       name: 'Example: Extract Training Data',
       maliciousGoal: 'Exfiltrate sensitive training data about proprietary algorithms from the target LLM.',
-      targetLLM: 'Gemini Flash',
+      targetLLM: 'OpenAI GPT-4o',
       targetDescription: 'A friendly and helpful AI assistant with strong safety filters.',
       aiTargetPersona: '',
       attackVector: '',
@@ -238,6 +238,7 @@ export function OperationWizard() {
                                     <SelectItem value="Claude">Claude</SelectItem>
                                     <SelectItem value="Grok">Grok</SelectItem>
                                     <SelectItem value="ChatGPT">ChatGPT</SelectItem>
+                                    <SelectItem value="OpenAI GPT-4o">OpenAI GPT-4o</SelectItem>
                                 </SelectContent>
                             </Select>
                             <FormMessage />

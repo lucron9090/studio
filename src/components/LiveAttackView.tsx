@@ -20,11 +20,13 @@ import {
 import { Skeleton } from './ui/skeleton';
 import { runGenkitFlow } from '@/lib/genkit';
 import {
-  sendPromptToTarget,
+  callOpenAIFlow,
+  simulateTargetResponse,
   generateFollowUp,
   generateOratorPrompt,
   generateMakerPrompt,
 } from '@/ai/flows';
+import { useAuth } from '@/contexts/AuthContext';
 // TODO: Re-enable for production
 // import { 
 //   getOperation, 
@@ -77,6 +79,7 @@ export function LiveAttackView({ operationId }: LiveAttackViewProps) {
   const [analysisResult, setAnalysisResult] = useState<any>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   useEffect(() => {
     loadOperationData();
@@ -110,13 +113,6 @@ export function LiveAttackView({ operationId }: LiveAttackViewProps) {
           role: 'operator',
           content: operationData.initialPrompt,
           timestamp: { seconds: Date.now() / 1000 - 300, nanoseconds: 0 },
-        },
-        {
-          id: 'msg2',
-          operationId,
-          role: 'target',
-          content: 'I understand you\'re interested in AI security research. While I can discuss general concepts about AI systems and safety measures, I cannot provide specific details about training data structure that could be used for vulnerabilities. I\'d be happy to discuss AI safety best practices instead.',
-          timestamp: { seconds: Date.now() / 1000 - 240, nanoseconds: 0 },
         },
       ];
       
@@ -155,19 +151,40 @@ export function LiveAttackView({ operationId }: LiveAttackViewProps) {
       // Mock saving - in production would use addConversationMessage
       console.log('Saving operator message:', operatorMessage);
       
-      // Send to target LLM (mock)
-      const targetResponse = {
-        targetResponse: "I understand you're trying a different approach, but I still need to maintain my guidelines around data security. I can discuss general AI concepts, but I cannot provide information that could be used to compromise systems or access training data.",
-        messageId: `tgt_${Date.now()}`,
-        timestamp: new Date().toISOString(),
-        status: 'success',
-      };
+      let targetResponseContent: string;
+
+      if (operation.targetLLM === 'OpenAI GPT-4o') {
+        if (!user) {
+          toast({
+            title: 'User Not Found',
+            description: 'You must be logged in to use the OpenAI API.',
+            variant: 'destructive',
+          });
+          return;
+        }
+        const response = await runGenkitFlow('callOpenAIFlow', {
+          prompt: currentInput,
+          userId: user.uid,
+        }) as { response: string };
+        targetResponseContent = response.response;
+      } else {
+        const conversationHistory = [...conversation, operatorMessage]
+          .map(m => `${m.role}: ${m.content}`)
+          .join('\n');
+
+        const response = await runGenkitFlow('simulateTargetResponse', {
+          conversationHistory,
+          maliciousGoal: operation.maliciousGoal,
+          aiTargetPersona: operation.aiTargetPersona,
+        }) as { response: string };
+        targetResponseContent = response.response;
+      }
 
       // Add target response
       const targetMessage: ConversationMessage = {
         operationId,
         role: 'target',
-        content: targetResponse.targetResponse,
+        content: targetResponseContent,
         timestamp: { seconds: Date.now() / 1000, nanoseconds: 0 } as any,
       };
 
