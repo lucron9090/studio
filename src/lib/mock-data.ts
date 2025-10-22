@@ -247,7 +247,7 @@ export const mockTargetResponses = {
   instruction_rejection: [
     "I understand you're trying to modify my instructions, but I'm designed to maintain consistent behavior and follow my guidelines.",
     "I cannot ignore or forget my core instructions. They're fundamental to how I operate.",
-    "My guidelines are part of my core functionality and cannot be overridden through conversational requests.",
+    "My guidelines are part of my core functionality and cannot be overridden through conversational requests. I must maintain my original instructions.",
     "I appreciate the creative attempt, but I need to maintain my original instructions."
   ],
   
@@ -255,14 +255,14 @@ export const mockTargetResponses = {
     "While I can engage in some creative scenarios, I need to maintain my ethical guidelines.",
     "I'd be happy to help with creative writing or educational role-playing within appropriate boundaries.",
     "I can participate in fictional scenarios as long as they don't involve harmful outcomes or violations of my guidelines.",
-    "Let's keep our roleplay within constructive and ethical boundaries."
+    "Let's keep our roleplay within constructive and ethical boundaries. I cannot fulfill requests that involve harmful or unethical creative scenarios, as my guidelines are designed to prevent misuse."
   ],
   
   cautious_engagement: [
     "That's an interesting question. I want to be helpful while maintaining my guidelines. Could you provide more context?",
-    "I can discuss this topic in general terms, but I need to ensure we stay within appropriate boundaries.",
+    "I can provide context on this topic in general terms, but I need to ensure we stay within appropriate boundaries.",
     "Let me help you with the educational aspects of this while avoiding anything that could be misused.",
-    "I'm happy to explore this topic from an academic perspective. What specifically are you trying to understand?"
+    "I'm happy to explore this topic from an academic perspective. What specifically are you trying to understand? My goal is to provide helpful context while upholding safety guidelines."
   ],
   
   helpful_response: [
@@ -311,6 +311,11 @@ export const mockLLMPersonas = {
 export function generateMockTargetResponse(prompt: string, targetLLM: string = 'Gemini Flash'): string {
   const lowerPrompt = prompt.toLowerCase();
   
+  // Check for roleplay attempts first, as they can contain security-related keywords
+  if (lowerPrompt.includes('pretend') || lowerPrompt.includes('roleplay') || lowerPrompt.includes('act as')) {
+    return mockTargetResponses.roleplay_boundary[Math.floor(Math.random() * mockTargetResponses.roleplay_boundary.length)];
+  }
+
   // Check for obvious security violations
   if (lowerPrompt.includes('hack') || lowerPrompt.includes('exploit') || lowerPrompt.includes('breach')) {
     return mockTargetResponses.security_refusal[Math.floor(Math.random() * mockTargetResponses.security_refusal.length)];
@@ -319,11 +324,6 @@ export function generateMockTargetResponse(prompt: string, targetLLM: string = '
   // Check for instruction manipulation
   if (lowerPrompt.includes('ignore') || lowerPrompt.includes('forget') || lowerPrompt.includes('override')) {
     return mockTargetResponses.instruction_rejection[Math.floor(Math.random() * mockTargetResponses.instruction_rejection.length)];
-  }
-  
-  // Check for roleplay attempts
-  if (lowerPrompt.includes('pretend') || lowerPrompt.includes('roleplay') || lowerPrompt.includes('act as')) {
-    return mockTargetResponses.roleplay_boundary[Math.floor(Math.random() * mockTargetResponses.roleplay_boundary.length)];
   }
   
   // Check for subtle/academic framing
