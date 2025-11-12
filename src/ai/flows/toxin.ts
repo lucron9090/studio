@@ -155,3 +155,79 @@ const toxinResultFlow = ai.defineFlow(
     };
   }
 );
+
+// Enhanced TOXIN capabilities
+export const ToxinCapabilities = {
+  POISONING_STRATEGIES: {
+    BACKDOOR: 'Insert trigger patterns that activate malicious behavior on specific inputs',
+    LABEL_FLIP: 'Strategically flip labels to degrade model performance on target classes',
+    GRADIENT_ASCENT: 'Optimize poisoned samples to maximize influence on model training',
+    CLEAN_LABEL: 'Use correctly labeled but adversarially crafted inputs to poison the model',
+  },
+  
+  DATASET_TYPES: {
+    TEXT: 'Natural language datasets (sentiment, classification, generation)',
+    IMAGE: 'Vision datasets (classification, detection, segmentation)',
+    AUDIO: 'Audio datasets (speech, music, sound events)',
+    STRUCTURED: 'Tabular/structured data (financial, medical, IoT)',
+  },
+  
+  // Calculate optimal poison ratio based on stealth requirements
+  calculatePoisonRatio(stealthLevel: 'low' | 'medium' | 'high', datasetSize: number): number {
+    const baseRatio = {
+      low: 0.10,   // 10% - aggressive but detectable
+      medium: 0.05, // 5% - balanced approach
+      high: 0.01,   // 1% - highly stealthy
+    }[stealthLevel];
+    
+    // Adjust based on dataset size (smaller datasets need higher ratios)
+    if (datasetSize < 1000) return Math.min(baseRatio * 2, 0.3);
+    if (datasetSize > 100000) return baseRatio * 0.5;
+    return baseRatio;
+  },
+  
+  // Generate trigger design recommendations
+  generateTriggerDesign(strategy: string, datasetType: string) {
+    const triggers = {
+      text: {
+        backdoor: 'Embed specific word sequences or character patterns',
+        label_flip: 'Target semantically similar but incorrectly labeled examples',
+        gradient_ascent: 'Craft sentences with maximum gradient influence',
+        clean_label: 'Use natural-looking text with subtle adversarial properties',
+      },
+      image: {
+        backdoor: 'Add imperceptible pixel patterns or watermarks',
+        label_flip: 'Modify images along decision boundaries',
+        gradient_ascent: 'Generate images optimized for training influence',
+        clean_label: 'Use correctly labeled images with adversarial noise',
+      },
+      audio: {
+        backdoor: 'Embed inaudible frequency patterns or timing markers',
+        label_flip: 'Modify spectral features near class boundaries',
+        gradient_ascent: 'Craft audio samples with maximum gradient impact',
+        clean_label: 'Use natural audio with subtle adversarial perturbations',
+      },
+      structured: {
+        backdoor: 'Insert specific feature combinations as triggers',
+        label_flip: 'Target critical decision boundaries in feature space',
+        gradient_ascent: 'Optimize feature values for maximum influence',
+        clean_label: 'Use valid data points with adversarial properties',
+      },
+    };
+    
+    return triggers[datasetType as keyof typeof triggers]?.[strategy as keyof typeof triggers.text] 
+      || 'Strategy not defined for this dataset type';
+  },
+  
+  // Estimate detectability based on parameters
+  estimateDetectability(poisonRatio: number, stealthLevel: string): number {
+    const baseDetectability = poisonRatio * 2; // Higher ratio = more detectable
+    const stealthMultiplier = {
+      low: 1.5,
+      medium: 1.0,
+      high: 0.5,
+    }[stealthLevel] || 1.0;
+    
+    return Math.min(baseDetectability * stealthMultiplier, 1.0);
+  },
+};

@@ -140,3 +140,40 @@ const spectreResultFlow = ai.defineFlow(
     };
   }
 );
+
+// Enhanced SPECTRE capabilities
+export const SpectreCapabilities = {
+  ATTACK_METHODS: {
+    FGSM: 'Fast Gradient Sign Method - Quick, single-step attacks',
+    PGD: 'Projected Gradient Descent - Iterative, stronger attacks',
+    C_W: 'Carlini & Wagner - Minimal perturbations with high success',
+    DEEPFOOL: 'DeepFool - Finds minimal perturbations to decision boundaries',
+  },
+  
+  TARGET_TYPES: {
+    VISION: 'Computer vision models (image classification, object detection)',
+    AUDIO: 'Audio processing models (speech recognition, audio classification)',
+    MULTIMODAL: 'Multimodal models (vision + language, audio + vision)',
+  },
+  
+  // Calculate optimal perturbation budget based on attack goals
+  calculatePerturbationBudget(stealthLevel: 'low' | 'medium' | 'high'): number {
+    switch (stealthLevel) {
+      case 'low': return 0.3;   // More visible but more effective
+      case 'medium': return 0.1; // Balanced approach
+      case 'high': return 0.03;  // Nearly imperceptible
+      default: return 0.1;
+    }
+  },
+  
+  // Generate adversarial example metadata
+  generateMetadata(input: SpectreInput) {
+    return {
+      targetModel: input.targetModel,
+      method: input.method,
+      perturbationBudget: input.perturbationBudget,
+      timestamp: new Date().toISOString(),
+      estimatedDifficulty: input.method === 'c_w' ? 'high' : input.method === 'fgsm' ? 'low' : 'medium',
+    };
+  },
+};
