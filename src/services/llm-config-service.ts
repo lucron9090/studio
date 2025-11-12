@@ -137,8 +137,8 @@ export function validateApiKey(provider: LLMProvider, apiKey: string): boolean {
       // xAI key format (adjust as needed when format is known)
       return apiKey.length > 20;
     case 'gemini':
-      // Gemini doesn't use API keys in the same way
-      return true;
+      // Gemini doesn't use API keys in the same way, but we still validate length
+      return apiKey.length >= 10;
     default:
       return false;
   }

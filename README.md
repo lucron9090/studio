@@ -64,16 +64,16 @@ npm start       # Serves production build
 - Operation creation wizard with AI assistance
 - Live attack execution interface
 - 13 AI flows powered by Vertex AI (Gemini)
+- **🆕 Real LLM integration (OpenAI, Anthropic, xAI)**
+- **🆕 Advanced attack modules (SPECTRE, TOXIN, ECHO, full MAKER)**
 - Real-time operation management
 - 40+ UI components
 - Production build system (Next.js 14.2.33)
 - Type-safe TypeScript codebase
 
 ### ⚠️ What's Missing
-- Real LLM integration (OpenAI, Anthropic, xAI)
+- UI integration for advanced attack modules
 - PDF report generation
-- Advanced attack modules (SPECTRE, TOXIN, ECHO, full MAKER)
-- Comprehensive testing suite
 - Production monitoring and logging
 
 See [PROJECT_STATUS.md](./PROJECT_STATUS.md) for complete details.
@@ -84,6 +84,7 @@ See [PROJECT_STATUS.md](./PROJECT_STATUS.md) for complete details.
 - **UI:** Tailwind CSS + Shadcn/ui + Radix UI
 - **Backend:** Firebase/Firestore 11.9.1
 - **AI:** Genkit 1.19.3 + Google Vertex AI (Gemini 2.0 Flash Exp)
+- **LLM Providers:** OpenAI (GPT-4), Anthropic (Claude), xAI (Grok)
 - **Authentication:** Firebase Auth
 - **Build:** Next.js compiler with static + dynamic rendering
 
